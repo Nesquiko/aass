@@ -5,3 +5,4 @@ frontend/src/api/generated
 monolith/pkg/api/api.gen.go
 monolith/tmp
 monolith/c.out
+microservices/api-gateway-logs
