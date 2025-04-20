@@ -1,8 +1,11 @@
-package patientservice
+package pkg
 
 import (
 	"fmt"
 	"log/slog"
+	"strings"
+
+	"github.com/spf13/viper"
 )
 
 type PatientServiceConfig struct {
@@ -34,4 +37,30 @@ func (c PatientServiceConfig) MongoURI() string {
 		c.Mongo.Port,
 		c.Mongo.Db,
 	)
+}
+
+func LoadConfig() (*PatientServiceConfig, error) {
+	v := viper.New()
+
+	v.SetEnvPrefix("PATIENTSERVICE")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
+	v.SetDefault("app.host", "")
+	v.SetDefault("app.port", "")
+	v.SetDefault("app.timezone", "")
+	v.SetDefault("log.level", "")
+	v.SetDefault("mongo.host", "")
+	v.SetDefault("mongo.port", "")
+	v.SetDefault("mongo.db", "")
+	v.SetDefault("mongo.user", "")
+	v.SetDefault("mongo.password", "")
+
+	var cfg PatientServiceConfig
+	err := v.Unmarshal(&cfg)
+	if err != nil {
+		return nil, fmt.Errorf("LoadConfig failed to unmarshal config: %w", err)
+	}
+
+	return &cfg, nil
 }

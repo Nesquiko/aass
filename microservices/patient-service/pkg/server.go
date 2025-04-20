@@ -1,4 +1,4 @@
-package patientservice
+package pkg
 
 import (
 	"errors"

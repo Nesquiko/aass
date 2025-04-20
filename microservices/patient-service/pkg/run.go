@@ -1,4 +1,4 @@
-package patientservice
+package pkg
 
 import (
 	"context"
@@ -18,13 +18,13 @@ func Run(ctx context.Context) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	cfg, err := server.LoadConfig[PatientServiceConfig]("AUTH_SERVICE")
+	cfg, err := LoadConfig()
 	if err != nil {
 		slog.Error("failed to read config", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	httpLogger := server.SetupLogger(cfg.Log.Level)
+	httpLogger := server.SetupLogger("patient-service", cfg.Log.Level)
 
 	loc, err := time.LoadLocation(cfg.App.Timezone)
 	if err != nil {

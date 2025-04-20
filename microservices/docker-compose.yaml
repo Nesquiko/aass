@@ -10,9 +10,9 @@ services:
     networks:
       - medical_network
     restart: unless-stopped
-    # depends_on:
-    # - auth-service
-    # - patient-service
+    depends_on:
+      # - auth-service
+      - patient-service
     # - doctor-service
     # - appointment-service
     # - condition-service
@@ -20,6 +20,53 @@ services:
     # - resource-service
     # - medical-history-service
 
+  mongo_db:
+    image: mongo:7.0-rc
+    container_name: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - db_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: mysecret
+    networks:
+      - medical_network
+
+  mongo_express:
+    image: mongo-express
+    container_name: mongo_express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: mysecret
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_BASICAUTH_USERNAME: mexpress
+      ME_CONFIG_BASICAUTH_PASSWORD: mexpress
+    depends_on:
+      - mongo
+    networks:
+      - medical_network
+
+  patient-service:
+    build:
+      context: .
+      dockerfile: ./patient-service/Dockerfile
+    container_name: patient-service
+    env_file:
+      - ./patient-service/local.env
+    networks:
+      - medical_network
+    restart: unless-stopped
+    depends_on:
+      - mongo
+
 networks:
   medical_network:
     driver: bridge
+
+volumes:
+  db_data: {}
