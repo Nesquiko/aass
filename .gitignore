@@ -6,3 +6,4 @@ monolith/pkg/api/api.gen.go
 monolith/tmp
 monolith/c.out
 microservices/api-gateway-logs
+microservices/**/api.gen.go
