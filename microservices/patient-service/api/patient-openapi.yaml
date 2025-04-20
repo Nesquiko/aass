@@ -7,10 +7,55 @@ info:
     url: https://opensource.org/licenses/MIT
 servers:
   - description: Patient Service Endpoint
-    url: /
+    url: / # Base path handled by gateway routing
 tags:
   - name: Patients
 paths:
+  /patients: # Path for creating patients
+    post:
+      tags:
+        - Patients
+      summary: Create a new patient profile
+      description: Creates a new patient record. This might be called internally after successful registration in the Auth service.
+      operationId: createPatient
+      requestBody:
+        description: Details of the patient to be created.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewPatientRequest"
+            examples:
+              newPatient:
+                summary: Example new patient request
+                value:
+                  email: new.patient@example.com
+                  firstName: Jane
+                  lastName: Smith
+      responses:
+        "201":
+          description: Patient profile created successfully. Returns the created patient object.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "409":
+          description: Conflict - A patient with the provided email already exists.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+              examples:
+                duplicateEmail:
+                  summary: Example duplicate email error (409)
+                  value:
+                    title: Conflict
+                    status: 409
+                    code: patient.email-exists
+                    detail: A patient with email new.patient@example.com already exists.
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+
   /patients/{patientId}: # Corresponds to /api/patients/{patientId}
     get:
       tags:
@@ -50,7 +95,28 @@ components:
       type: string
       enum:
         - patient
-        - doctor
+        # Removed 'doctor' as this service only deals with patients
+      default: patient # Default role for this service context
+      readOnly: true # Role is fixed for patients in this service
+    NewPatientRequest: # Schema for the POST request body
+      type: object
+      required:
+        - email
+        - firstName
+        - lastName
+      properties:
+        email:
+          type: string
+          format: email
+          example: new.patient@example.com
+        firstName:
+          type: string
+          minLength: 1
+          example: Jane
+        lastName:
+          type: string
+          minLength: 1
+          example: Smith
     Patient:
       type: object
       required:
@@ -63,6 +129,7 @@ components:
         id:
           type: string
           format: uuid
+          readOnly: true # ID is assigned by the server
         firstName:
           type: string
         lastName:
@@ -71,7 +138,7 @@ components:
           type: string
           format: email
         role:
-          $ref: "#/components/schemas/UserRole"
+          $ref: "#/components/schemas/UserRole" # Will always be 'patient' here
     ErrorDetail:
       type: object
       description: Standardized error details (RFC 9457).

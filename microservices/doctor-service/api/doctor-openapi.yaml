@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
 servers:
   - description: Doctor Service Endpoint
-    url: /
+    url: / # Base path handled by gateway routing
 tags:
   - name: Doctors
 paths:
@@ -22,6 +22,51 @@ paths:
           $ref: "#/components/responses/Doctors"
         "500":
           $ref: "#/components/responses/InternalServerErrorResponse"
+    post: # New endpoint for creating doctors
+      tags:
+        - Doctors
+      summary: Create a new doctor profile
+      description: Creates a new doctor record. This might be called internally after successful registration in the Auth service.
+      operationId: createDoctor
+      requestBody:
+        description: Details of the doctor to be created.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewDoctorRequest"
+            examples:
+              newDoctor:
+                summary: Example new doctor request
+                value:
+                  email: gregory.house@example.com
+                  firstName: Gregory
+                  lastName: House
+                  specialization: diagnostician
+      responses:
+        "201":
+          description: Doctor profile created successfully. Returns the created doctor object.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Doctor"
+        "409":
+          description: Conflict - A doctor with the provided email already exists.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+              examples:
+                duplicateEmail:
+                  summary: Example duplicate email error (409)
+                  value:
+                    title: Conflict
+                    status: 409
+                    code: doctor.email-exists
+                    detail: A doctor with email gregory.house@example.com already exists.
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+
   /doctors/available: # Corresponds to /api/doctors/available
     get:
       tags:
@@ -118,9 +163,11 @@ components:
     UserRole:
       type: string
       enum:
-        - patient
+        # Removed 'patient' as this service only deals with doctors
         - doctor
-    Patient:
+      default: doctor # Default role for this service context
+      readOnly: true # Role is fixed for doctors in this service
+    Patient: # Base schema used by Doctor
       type: object
       required:
         - id
@@ -132,6 +179,7 @@ components:
         id:
           type: string
           format: uuid
+          readOnly: true
         firstName:
           type: string
         lastName:
@@ -140,7 +188,7 @@ components:
           type: string
           format: email
         role:
-          $ref: "#/components/schemas/UserRole"
+          $ref: "#/components/schemas/UserRole" # Will always be 'doctor' here
     SpecializationEnum:
       type: string
       description: Medical specialization of a doctor.
@@ -161,9 +209,31 @@ components:
         - urologist
         - other
       example: diagnostician
-    Doctor:
+    NewDoctorRequest: # Schema for the POST request body
+      type: object
+      required:
+        - email
+        - firstName
+        - lastName
+        - specialization
+      properties:
+        email:
+          type: string
+          format: email
+          example: gregory.house@example.com
+        firstName:
+          type: string
+          minLength: 1
+          example: Gregory
+        lastName:
+          type: string
+          minLength: 1
+          example: House
+        specialization:
+          $ref: "#/components/schemas/SpecializationEnum"
+    Doctor: # Core entity of this service
       allOf:
-        - $ref: "#/components/schemas/Patient"
+        - $ref: "#/components/schemas/Patient" # Inherits base fields
         - type: object
           required:
             - specialization
@@ -187,7 +257,7 @@ components:
       required:
         - time
         - status
-    AppointmentStatus:
+    AppointmentStatus: # Needed for AppointmentDisplay
       type: string
       enum:
         - requested
@@ -196,11 +266,11 @@ components:
         - completed
         - denied
       example: scheduled
-    AppointmentType:
+    AppointmentType: # Needed for AppointmentDisplay
       type: string
       enum:
         - regular_check
-    AppointmentDisplay:
+    AppointmentDisplay: # Needed for DoctorCalendar
       type: object
       description: Represents an appointment view.
       properties:
@@ -225,7 +295,7 @@ components:
         - patientName
         - status
         - type
-    DoctorCalendar:
+    DoctorCalendar: # Used for calendar endpoint response
       type: object
       properties:
         appointments:
