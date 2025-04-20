@@ -1,0 +1,8 @@
+oneOf:
+  - $ref: "./PatientRegistration.yaml"
+  - $ref: "./DoctorRegistration.yaml"
+discriminator:
+  propertyName: role
+  mapping:
+    patient: "./PatientRegistration.yaml"
+    doctor: "./DoctorRegistration.yaml"

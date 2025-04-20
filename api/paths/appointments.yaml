@@ -1,0 +1,21 @@
+post:
+  tags:
+    - Appointments
+  summary: Patient creates an appointment request
+  operationId: requestAppointment
+  requestBody:
+    description: Basic info about the appointment request
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/appointments/NewAppointmentRequest.yaml"
+  responses:
+    "201":
+      description: Appointment successfully requested.
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/appointments/PatientAppointment.yaml"
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

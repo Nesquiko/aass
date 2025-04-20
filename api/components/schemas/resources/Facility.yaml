@@ -1,0 +1,15 @@
+type: object
+description: Represents a required facility resource.
+properties:
+  id:
+    type: string
+    format: uuid
+    description: Unique identifier for the facility.
+    example: "fac-001-a2b3-c4d5-e6f7"
+  name:
+    type: string
+    description: Name of the facility.
+    example: "MRI Suite B"
+required:
+  - id
+  - name

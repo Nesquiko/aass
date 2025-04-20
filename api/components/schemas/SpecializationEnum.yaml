@@ -1,0 +1,19 @@
+type: string
+description: Medical specialization of a doctor.
+enum:
+  - surgeon
+  - gastroenterologist
+  - pediatrician
+  - diagnostician
+  - endocrinologist
+  - general_practitioner
+  - cardiologist
+  - dermatologist
+  - neurologist
+  - oncologist
+  - orthopedist
+  - psychiatrist
+  - radiologist
+  - urologist
+  - other
+example: diagnostician

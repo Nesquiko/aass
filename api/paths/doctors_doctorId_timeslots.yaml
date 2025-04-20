@@ -1,0 +1,15 @@
+get:
+  tags:
+    - Doctors
+  summary: Get doctor's timeslots for a specific date
+  description: Retrieves a list of available and unavailable time slots for a given doctor ID and date.
+  operationId: doctorsTimeslots
+  parameters:
+    - $ref: "../components/parameters/path/doctorId.yaml"
+    - $ref: "../components/parameters/query/date.yaml"
+  responses:
+    "200":
+      $ref: "../components/responses/DoctorTimeslots.yaml"
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

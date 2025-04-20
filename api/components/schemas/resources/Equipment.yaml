@@ -1,0 +1,15 @@
+type: object
+description: Represents a required equipment resource.
+properties:
+  id:
+    type: string
+    format: uuid
+    description: Unique identifier for the equipment.
+    example: "eqp-002-f7e6-d5c4-b3a2"
+  name:
+    type: string
+    description: Name of the equipment.
+    example: "Ultrasound Machine XG-5"
+required:
+  - id
+  - name

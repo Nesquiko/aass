@@ -1,0 +1,46 @@
+post:
+  tags:
+    - Resources
+  summary: Reserves resources for an appointment
+  operationId: reserveAppointmentResources
+  parameters:
+    - $ref: "../components/parameters/path/appointmentId.yaml"
+  requestBody:
+    description: Reservation details
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required: [start]
+          properties:
+            start:
+              type: string
+              format: date-time
+            facilityId:
+              type: string
+              format: uuid
+            medicine:
+              type: string
+              format: uuid
+            equipment:
+              type: string
+              format: uuid
+
+  responses:
+    "200":
+      description: Successfully reserved a resource for an appointment.
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/appointments/DoctorAppointment.yaml"
+
+    "404":
+      description: Some resource, or appointment wasn't found
+      content:
+        application/problem+json:
+          schema:
+            $ref: "../components/schemas/ErrorDetail.yaml"
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

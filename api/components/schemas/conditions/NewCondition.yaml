@@ -1,0 +1,9 @@
+allOf:
+  - $ref: "./ConditionDisplay.yaml"
+  - type: object
+    properties:
+      patientId:
+        type: string
+        format: uuid
+    required:
+      - patientId

@@ -1,0 +1,22 @@
+type: object
+description: Lists of available resources (facilities, equipment, medicine) for a specific date and time slot.
+properties:
+  facilities:
+    type: array
+    description: List of available facilities.
+    items:
+      $ref: "./Facility.yaml"
+  equipment:
+    type: array
+    description: List of available equipment.
+    items:
+      $ref: "./Equipment.yaml"
+  medicine:
+    type: array
+    description: List of available medicine (assuming medicine can be 'allocated' or has limited stock per slot).
+    items:
+      $ref: "./Medicine.yaml"
+required:
+  - facilities
+  - equipment
+  - medicine

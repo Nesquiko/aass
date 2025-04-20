@@ -1,0 +1,2 @@
+type: string
+enum: [medicine, facility, equipment]

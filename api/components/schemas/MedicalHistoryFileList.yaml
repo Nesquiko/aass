@@ -1,0 +1,15 @@
+type: object
+description: A paginated list of medical history filenames for the authenticated patient.
+properties:
+  files:
+    type: array
+    description: List of filenames for the medical history records on the current page.
+    items:
+      type: string
+      description: Filename of a medical record document.
+      example: "lab_results_2024-01-15.pdf"
+  pagination:
+    $ref: "./Pagination.yaml"
+required:
+  - files
+  - pagination

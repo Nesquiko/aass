@@ -1,0 +1,17 @@
+get:
+  tags:
+    - Appointments
+  summary: Get appointment scheduled by patient
+  operationId: patientsAppointment
+  parameters:
+    - $ref: "../components/parameters/path/patientId.yaml"
+    - $ref: "../components/parameters/path/appointmentId.yaml"
+  responses:
+    "200":
+      description: Appointment details.
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/appointments/PatientAppointment.yaml"
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

@@ -1,0 +1,12 @@
+type: object
+required: [appointmentId, start, end]
+properties:
+  appointmentId:
+    type: string
+    format: uuid
+  start:
+    type: string
+    format: date-time
+  end:
+    type: string
+    format: date-time

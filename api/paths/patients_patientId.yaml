@@ -1,0 +1,33 @@
+get:
+  tags:
+    - Patients
+  summary: Get patient by ID
+  description: Retrieves the details of a specific patient by their unique identifier.
+  operationId: getPatientById
+  parameters:
+    - $ref: "../components/parameters/path/patientId.yaml"
+  responses:
+    "200":
+      description: Successfully retrieved patient details.
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/auth/Patient.yaml"
+
+    "404":
+      description: Not Found - The specified patient ID does not exist.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "../components/schemas/ErrorDetail.yaml"
+          examples:
+            patientNotFound:
+              summary: Example patient not found (404)
+              value:
+                title: "Resource Not Found"
+                status: 404
+                code: "patient.not-found"
+                detail: "Patient with ID f47ac10b-58cc-4372-a567-0e02b2c3d479 not found."
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

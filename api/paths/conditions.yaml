@@ -1,0 +1,23 @@
+post:
+  tags:
+    - Conditions
+  summary: Create a condition record for a patient
+  operationId: createPatientCondition
+  requestBody:
+    description: Details of the condition to be created.
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/conditions/NewCondition.yaml"
+
+  responses:
+    "201":
+      description: Condition record created successfully. Returns the created condition details.
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/conditions/ConditionDisplay.yaml"
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

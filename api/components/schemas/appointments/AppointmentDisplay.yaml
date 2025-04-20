@@ -1,0 +1,27 @@
+type: object
+description: Represents an appointment view.
+properties:
+  id:
+    type: string
+    format: uuid
+    description: Unique identifier for the appointment.
+    example: "d4e5f6a7-b8c9-0123-4567-890abcdef123"
+  appointmentDateTime:
+    type: string
+    format: date-time
+    description: The date time of the appointment.
+  doctorName:
+    type: string
+  patientName:
+    type: string
+  status:
+    $ref: "./AppointmentStatus.yaml"
+  type:
+    $ref: "./AppointmentType.yaml"
+required:
+  - id
+  - appointmentDateTime
+  - doctorName
+  - patientName
+  - status
+  - type

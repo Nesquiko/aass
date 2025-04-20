@@ -1,0 +1,23 @@
+allOf:
+  - $ref: "./AppointmentBase.yaml"
+  - type: object
+    required:
+      - patient
+    properties:
+      patient:
+        $ref: "../auth/Patient.yaml"
+      facilities:
+        type: array
+        description: List of required facilities for the appointment.
+        items:
+          $ref: "../resources/Facility.yaml"
+      equipment:
+        type: array
+        description: List of required equipment for the appointment.
+        items:
+          $ref: "../resources/Equipment.yaml"
+      medicine:
+        type: array
+        description: List of required medicine for the appointment.
+        items:
+          $ref: "../resources/Medicine.yaml"

@@ -1,0 +1,23 @@
+post:
+  tags:
+    - Resources
+  summary: Create resource
+  operationId: createResource
+  requestBody:
+    description: New resource to be created
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/resources/NewResource.yaml"
+
+  responses:
+    "201":
+      description: Created resource
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/resources/NewResource.yaml"
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

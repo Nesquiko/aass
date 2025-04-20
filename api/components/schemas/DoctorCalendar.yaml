@@ -1,0 +1,6 @@
+type: object
+properties:
+  appointments:
+    type: array
+    items:
+      $ref: "./appointments/AppointmentDisplay.yaml"

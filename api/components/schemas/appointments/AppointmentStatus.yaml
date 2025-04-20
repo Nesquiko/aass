@@ -1,0 +1,9 @@
+type: string
+description: The current status of the appointment.
+enum:
+  - requested
+  - cancelled
+  - scheduled
+  - completed
+  - denied
+example: "scheduled"

@@ -1,0 +1,23 @@
+type: object
+description: Basic info about a patient's condition.
+properties:
+  id:
+    type: string
+    format: uuid
+    readOnly: true
+  name:
+    type: string
+  start:
+    type: string
+    format: date-time
+  end:
+    type: string
+    format: date-time
+  appointmentId:
+    type: string
+    format: uuid
+required:
+  - id
+  - name
+  - start
+  - end

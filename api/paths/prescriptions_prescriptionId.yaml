@@ -1,0 +1,56 @@
+get:
+  tags:
+    - Medical History
+  summary: Prescription detail
+  operationId: prescriptionDetail
+  parameters:
+    - $ref: "../components/parameters/path/prescriptionId.yaml"
+  responses:
+    "200":
+      description: Prescription details
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/prescription/Prescription.yaml"
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"
+
+patch:
+  tags:
+    - Medical History
+  summary: Update prescription
+  operationId: updatePrescription
+  parameters:
+    - $ref: "../components/parameters/path/prescriptionId.yaml"
+  requestBody:
+    description: Updated fields of a prescription
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/prescription/UpdatePrescription.yaml"
+  responses:
+    "200":
+      description: Prescription details
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/prescription/Prescription.yaml"
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"
+
+delete:
+  tags:
+    - Medical History
+  summary: Delete prescription
+  operationId: deletePrescription
+  parameters:
+    - $ref: "../components/parameters/path/prescriptionId.yaml"
+  responses:
+    "204":
+      description: Deleted
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

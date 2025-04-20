@@ -1,0 +1,8 @@
+name: date
+in: query
+required: true
+description: The specific day for which to retrieve timeslots (YYYY-MM-DD format).
+schema:
+  type: string
+  format: date
+example: "2024-07-15"

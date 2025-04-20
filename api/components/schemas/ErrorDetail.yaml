@@ -1,0 +1,24 @@
+type: object
+description: Standardized error details (RFC 9457).
+properties:
+  title:
+    type: string
+    description: Short, human-readable summary of the error type.
+  code:
+    type: string
+    description: Unique, machine-readable error code (e.g., 'namespace.error-name').
+  status:
+    type: integer
+    format: int
+    description: HTTP status code for this error occurrence.
+    minimum: 100
+    maximum: 599
+  detail:
+    type: string
+    description: Human-readable explanation specific to this occurrence.
+additionalProperties: true
+required:
+  - title
+  - code
+  - status
+  - detail

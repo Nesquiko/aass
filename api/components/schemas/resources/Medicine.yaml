@@ -1,0 +1,15 @@
+type: object
+description: Represents a required medicine resource.
+properties:
+  id:
+    type: string
+    format: uuid
+    description: Unique identifier for the medicine.
+    example: "med-003-9a8b-7c6d-5e4f"
+  name:
+    type: string
+    description: Name of the medicine.
+    example: "Anaesthetic XYZ"
+required:
+  - id
+  - name

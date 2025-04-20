@@ -1,0 +1,8 @@
+allOf:
+  - $ref: "./Patient.yaml"
+  - type: object
+    required:
+      - specialization
+    properties:
+      specialization:
+        $ref: "../SpecializationEnum.yaml"

@@ -1,0 +1,8 @@
+name: patientId
+in: path
+required: true
+description: The unique identifier (UUID) of the patient.
+schema:
+  type: string
+  format: uuid
+example: "b2c3d4e5-f6a7-8901-2345-67890abcdef1"

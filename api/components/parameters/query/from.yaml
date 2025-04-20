@@ -1,0 +1,8 @@
+name: from
+in: query
+required: true
+description: The specific day form which to retrieve resources.
+schema:
+  type: string
+  format: date
+example: "2024-07-15"

@@ -1,0 +1,17 @@
+type: object
+description: Represents a resource.
+properties:
+  id:
+    type: string
+    format: uuid
+    readOnly: true
+  name:
+    type: string
+    description: Name of the medicine.
+    example: "Anaesthetic XYZ"
+  type:
+    $ref: "./ResourceType.yaml"
+required:
+  - id
+  - name
+  - type

@@ -1,0 +1,10 @@
+description: An error occurred. See specific status code for details.
+content:
+  application/problem+json:
+    schema:
+      $ref: "../schemas/ErrorDetail.yaml"
+    example:
+      title: "Internal server error"
+      status: 500
+      code: "internal.server.error"
+      detail: "An unknwon server error occured"

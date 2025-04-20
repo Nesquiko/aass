@@ -1,0 +1,12 @@
+type: object
+description: Data required for a patient to reschedule their appointment.
+properties:
+  newAppointmentDateTime:
+    type: string
+    format: date-time
+  reason:
+    type: string
+    description: Optional reason for rescheduling provided by the patient.
+    example: "Work conflict arose."
+required:
+  - newAppointmentDateTime

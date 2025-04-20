@@ -1,0 +1,18 @@
+get:
+  tags:
+    - Doctors
+  summary: Get doctors's calendar
+  operationId: doctorsCalendar
+  parameters:
+    - $ref: "../components/parameters/path/doctorId.yaml"
+    - $ref: "../components/parameters/query/from.yaml"
+    - $ref: "../components/parameters/query/to.yaml"
+  responses:
+    "200":
+      description: Returned doctor's calendar for a given time period
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/DoctorCalendar.yaml"
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

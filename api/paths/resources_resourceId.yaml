@@ -1,0 +1,21 @@
+post:
+  tags:
+    - Resources
+  summary: Creates a reservation for a resource at specific time
+  operationId: reserveResource
+  parameters:
+    - $ref: "../components/parameters/path/resourceId.yaml"
+  requestBody:
+    description: Reservation details
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/resources/ResourceReservation.yaml"
+
+  responses:
+    "204":
+      description: Successfully reserved a resource for an appointment.
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

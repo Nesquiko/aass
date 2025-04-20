@@ -1,0 +1,23 @@
+post:
+  tags:
+    - Medical History
+  summary: Create a prescriptions record for a patient
+  operationId: createPrescription
+  requestBody:
+    description: Details of the prescription to be created.
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/prescription/NewPrescription.yaml"
+
+  responses:
+    "201":
+      description: Prescription record created successfully.
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/prescription/Prescription.yaml"
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

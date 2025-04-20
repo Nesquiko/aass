@@ -1,0 +1,72 @@
+openapi: 3.0.4
+info:
+  title: MediCal API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+tags:
+  - name: Auth
+  - name: Appointments
+  - name: Conditions
+  - name: Doctors
+  - name: Patients
+  - name: Resources
+  - name: Medical History
+servers:
+  - description: Cluster Endpoint
+    url: /api
+
+paths:
+  /auth/register:
+    $ref: "./paths/auth_register.yaml"
+  /auth/login:
+    $ref: "./paths/auth_login.yaml"
+
+  /appointments:
+    $ref: "./paths/appointments.yaml"
+  /appointments/{appointmentId}:
+    $ref: "./paths/appointments_appointmentId.yaml"
+
+  /conditions:
+    $ref: "./paths/conditions.yaml"
+  /conditions/{conditionId}:
+    $ref: "./paths/conditions_conditionId.yaml"
+  /conditions/patient/{patientId}:
+    $ref: "./paths/conditions_patient_patientId.yaml"
+
+  /prescriptions:
+    $ref: "./paths/prescriptions.yaml"
+  /prescriptions/{prescriptionId}:
+    $ref: "./paths/prescriptions_prescriptionId.yaml"
+
+  /patients/{patientId}:
+    $ref: "./paths/patients_patientId.yaml"
+  /patients/{patientId}/calendar:
+    $ref: "./paths/patients_patientId_calendar.yaml"
+  /patients/{patientId}/medical-history/files:
+    $ref: "./paths/patients_medical_history.yaml"
+  /patients/{patientId}/appointment/{appointmentId}:
+    $ref: "./paths/patients_patientId_appointment_appointmentId.yaml"
+
+  /doctors:
+    $ref: "./paths/doctors.yaml"
+  /doctors/available:
+    $ref: "./paths/doctors_available.yaml"
+  /doctors/{doctorId}:
+    $ref: "./paths/doctors_doctorId.yaml"
+  /doctors/{doctorId}/calendar:
+    $ref: "./paths/doctors_doctorId_calendar.yaml"
+  /doctors/{doctorId}/appointment/{appointmentId}:
+    $ref: "./paths/doctors_doctorId_appointment_appointmentId.yaml"
+  /doctors/{doctorId}/timeslots:
+    $ref: "./paths/doctors_doctorId_timeslots.yaml"
+
+  /resources:
+    $ref: "./paths/resources.yaml"
+  /resources/available:
+    $ref: "./paths/resources_available.yaml"
+  /resources/{resourceId}:
+    $ref: "./paths/resources_resourceId.yaml"
+  /resources/reserve/{appointmentId}:
+    $ref: "./paths/resources_reserve_appointmentId.yaml"

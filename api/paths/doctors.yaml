@@ -1,0 +1,11 @@
+get:
+  tags:
+    - Doctors
+  summary: Get doctors
+  operationId: getDoctors
+  responses:
+    "200":
+      $ref: "../components/responses/Doctors.yaml"
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

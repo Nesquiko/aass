@@ -1,0 +1,43 @@
+get:
+  tags:
+    - Conditions
+  summary: Condition detail
+  operationId: conditionDetail
+  parameters:
+    - $ref: "../components/parameters/path/conditionId.yaml"
+  responses:
+    "200":
+      description: Condition details
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/conditions/Condition.yaml"
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"
+
+patch:
+  tags:
+    - Conditions
+  summary: Update a condition
+  operationId: updateCondition
+  parameters:
+    - $ref: "../components/parameters/path/conditionId.yaml"
+  requestBody:
+    description: Updated condition fields
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/conditions/UpdateCondition.yaml"
+
+  responses:
+    "200":
+      description: Condition details
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/conditions/Condition.yaml"
+
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

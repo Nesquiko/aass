@@ -1,0 +1,21 @@
+type: object
+required:
+  - email
+  - firstName
+  - lastName
+  - role
+properties:
+  email:
+    type: string
+    format: email
+    example: "new.user@example.com"
+  firstName:
+    type: string
+    minLength: 1
+    example: "John"
+  lastName:
+    type: string
+    minLength: 1
+    example: "Doe"
+  role:
+    $ref: "./UserRole.yaml"

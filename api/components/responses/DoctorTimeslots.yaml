@@ -1,0 +1,12 @@
+description: Successfully retrieved the list of time slots.
+content:
+  application/json:
+    schema:
+      type: object
+      required:
+        - slots
+      properties:
+        slots:
+          type: array
+          items:
+            $ref: "../schemas/TimeSlot.yaml"

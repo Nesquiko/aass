@@ -1,0 +1,12 @@
+{
+  "name": "medical-api-spec",
+  "version": "1.0.0",
+  "description": "OpenAPI specification for the MediCal API",
+  "scripts": {
+    "bundle": "redocly bundle api.yaml -o api.bundled.yaml",
+    "preview": "redocly preview-docs api.yaml"
+  },
+  "dependencies": {
+    "@redocly/cli": "^1.34.1"
+  }
+}

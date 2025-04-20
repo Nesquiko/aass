@@ -1,0 +1,67 @@
+post:
+  tags:
+    - Appointments
+  description: Doctor either accepts or denies patients appointment request.
+  summary: Decide appointment's status
+  operationId: decideAppointment
+  parameters:
+    - $ref: "../components/parameters/path/appointmentId.yaml"
+  requestBody:
+    description: Whether doctor accepts or denies patients appointment request.
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/appointments/AppointmentDecision.yaml"
+  responses:
+    "200":
+      description: Appointment successfully accpted or denied.
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/appointments/DoctorAppointment.yaml"
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"
+
+patch:
+  tags:
+    - Appointments
+  description: Reschedules patients appointment, also changes state of the appointment to request.
+  summary: Reschedule an appointment
+  operationId: rescheduleAppointment
+  parameters:
+    - $ref: "../components/parameters/path/appointmentId.yaml"
+  requestBody:
+    description: Reason for cancelling the appointment.
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/appointments/AppointmentReschedule.yaml"
+  responses:
+    "200":
+      description: Appointment successfully cancelled.
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/appointments/PatientAppointment.yaml"
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"
+
+delete:
+  tags:
+    - Appointments
+  summary: Cancel an appointment
+  operationId: cancelAppointment
+  parameters:
+    - $ref: "../components/parameters/path/appointmentId.yaml"
+  requestBody:
+    description: Reason for cancelling the appointment.
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/appointments/AppointmentCancellation.yaml"
+  responses:
+    "204":
+      description: Appointment successfully cancelled.
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"

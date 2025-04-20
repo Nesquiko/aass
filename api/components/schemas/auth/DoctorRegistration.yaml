@@ -1,0 +1,11 @@
+allOf:
+  - $ref: "./PatientRegistration.yaml"
+  - type: object
+    properties:
+      role:
+        $ref: "./UserRole.yaml"
+      specialization:
+        $ref: "../SpecializationEnum.yaml"
+    required:
+      - role
+      - specialization
