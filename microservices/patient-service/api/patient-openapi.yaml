@@ -56,7 +56,39 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerErrorResponse"
 
-  /patients/{patientId}: # Corresponds to /api/patients/{patientId}
+  /patients/lookup/by-email:
+    get:
+      tags:
+        - Patients
+      summary: Get patient by email address
+      description: Retrieves the details of a specific patient using their email address.
+      operationId: getPatientByEmail
+      parameters:
+        - name: email
+          in: query
+          required: true
+          description: The email address of the patient to retrieve.
+          schema:
+            type: string
+            format: email
+          example: jane.smith@example.com
+      responses:
+        "200":
+          description: Successfully retrieved patient details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Not Found - No patient with the specified email address exists.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+
+  /patients/{patientId}:
     get:
       tags:
         - Patients
@@ -84,7 +116,7 @@ paths:
                   value:
                     title: Resource Not Found
                     status: 404
-                    code: patient.not-found
+                    code: patient.not-found # Code for ID lookup
                     detail: Patient with ID f47ac10b-58cc-4372-a567-0e02b2c3d479 not found.
         "500":
           $ref: "#/components/responses/InternalServerErrorResponse"
@@ -95,10 +127,9 @@ components:
       type: string
       enum:
         - patient
-        # Removed 'doctor' as this service only deals with patients
-      default: patient # Default role for this service context
-      readOnly: true # Role is fixed for patients in this service
-    NewPatientRequest: # Schema for the POST request body
+      default: patient
+      readOnly: true
+    NewPatientRequest:
       type: object
       required:
         - email
@@ -129,7 +160,7 @@ components:
         id:
           type: string
           format: uuid
-          readOnly: true # ID is assigned by the server
+          readOnly: true
         firstName:
           type: string
         lastName:
@@ -138,7 +169,7 @@ components:
           type: string
           format: email
         role:
-          $ref: "#/components/schemas/UserRole" # Will always be 'patient' here
+          $ref: "#/components/schemas/UserRole"
     ErrorDetail:
       type: object
       description: Standardized error details (RFC 9457).
