@@ -1,0 +1,336 @@
+openapi: 3.0.4
+info:
+  title: Doctor Service API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - description: Doctor Service Endpoint
+    url: /
+tags:
+  - name: Doctors
+paths:
+  /doctors: # Corresponds to /api/doctors
+    get:
+      tags:
+        - Doctors
+      summary: Get doctors
+      operationId: getDoctors
+      responses:
+        "200":
+          $ref: "#/components/responses/Doctors"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+  /doctors/available: # Corresponds to /api/doctors/available
+    get:
+      tags:
+        - Doctors
+      summary: Get doctors available at date-time
+      description: Retrieves list of doctors which are available on the date and in the given time
+      operationId: availableDoctors
+      parameters:
+        - $ref: "#/components/parameters/date-time"
+      responses:
+        "200":
+          description: Successfully retrieved doctor details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  doctors:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Doctor"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+  /doctors/{doctorId}: # Corresponds to /api/doctors/{doctorId}
+    get:
+      tags:
+        - Doctors
+      summary: Get doctor by ID
+      description: Retrieves the details of a specific doctor by their unique identifier.
+      operationId: getDoctorById
+      parameters:
+        - $ref: "#/components/parameters/doctorId"
+      responses:
+        "200":
+          description: Successfully retrieved doctor details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Doctor"
+        "404":
+          description: Not Found - The specified doctor ID does not exist.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+              examples:
+                doctorNotFound:
+                  summary: Example doctor not found (404)
+                  value:
+                    title: Resource Not Found
+                    status: 404
+                    code: doctor.not-found
+                    detail: Doctor with ID b2c3d4e5-f6a7-8901-2345-67890abcdef1 not found.
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+  /doctors/{doctorId}/calendar: # Corresponds to /api/doctors/{doctorId}/calendar
+    get:
+      tags:
+        - Doctors
+      summary: Get doctors's calendar (Data provided by Appointment Service, Aggregated by Gateway)
+      description: Retrieves appointments for a doctor in a given time period. This endpoint likely relies on data fetched by the gateway from the Appointment service.
+      operationId: doctorsCalendar
+      parameters:
+        - $ref: "#/components/parameters/doctorId"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        "200":
+          description: Returned doctor's calendar for a given time period
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DoctorCalendar"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+  /doctors/{doctorId}/timeslots: # Corresponds to /api/doctors/{doctorId}/timeslots
+    get:
+      tags:
+        - Doctors
+      summary: Get doctor's timeslots for a specific date
+      description: Retrieves a list of available and unavailable time slots for a given doctor ID and date.
+      operationId: doctorsTimeslots
+      parameters:
+        - $ref: "#/components/parameters/doctorId"
+        - $ref: "#/components/parameters/date"
+      responses:
+        "200":
+          $ref: "#/components/responses/DoctorTimeslots"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+
+components:
+  schemas:
+    UserRole:
+      type: string
+      enum:
+        - patient
+        - doctor
+    Patient:
+      type: object
+      required:
+        - id
+        - firstName
+        - lastName
+        - email
+        - role
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/UserRole"
+    SpecializationEnum:
+      type: string
+      description: Medical specialization of a doctor.
+      enum:
+        - surgeon
+        - gastroenterologist
+        - pediatrician
+        - diagnostician
+        - endocrinologist
+        - general_practitioner
+        - cardiologist
+        - dermatologist
+        - neurologist
+        - oncologist
+        - orthopedist
+        - psychiatrist
+        - radiologist
+        - urologist
+        - other
+      example: diagnostician
+    Doctor:
+      allOf:
+        - $ref: "#/components/schemas/Patient"
+        - type: object
+          required:
+            - specialization
+          properties:
+            specialization:
+              $ref: "#/components/schemas/SpecializationEnum"
+    TimeSlot:
+      type: object
+      description: Represents a single time slot for a doctor on a specific day.
+      properties:
+        time:
+          type: string
+          pattern: ^([01]\d|2[0-3]):([0-5]\d)$
+          example: "09:30"
+        status:
+          type: string
+          enum:
+            - available
+            - unavailable
+          example: available
+      required:
+        - time
+        - status
+    AppointmentStatus:
+      type: string
+      enum:
+        - requested
+        - cancelled
+        - scheduled
+        - completed
+        - denied
+      example: scheduled
+    AppointmentType:
+      type: string
+      enum:
+        - regular_check
+    AppointmentDisplay:
+      type: object
+      description: Represents an appointment view.
+      properties:
+        id:
+          type: string
+          format: uuid
+        appointmentDateTime:
+          type: string
+          format: date-time
+        doctorName:
+          type: string
+        patientName:
+          type: string
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+      required:
+        - id
+        - appointmentDateTime
+        - doctorName
+        - patientName
+        - status
+        - type
+    DoctorCalendar:
+      type: object
+      properties:
+        appointments:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppointmentDisplay"
+    ErrorDetail:
+      type: object
+      description: Standardized error details (RFC 9457).
+      properties:
+        title:
+          type: string
+        code:
+          type: string
+        status:
+          type: integer
+          format: int
+        detail:
+          type: string
+      additionalProperties: true
+      required:
+        - title
+        - code
+        - status
+        - detail
+
+  parameters:
+    doctorId:
+      name: doctorId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the doctor.
+      schema:
+        type: string
+        format: uuid
+      example: b2c3d4e5-f6a7-8901-2345-67890abcdef1
+    date:
+      name: date
+      in: query
+      required: true
+      description: The specific day (YYYY-MM-DD format).
+      schema:
+        type: string
+        format: date
+      example: "2024-07-15"
+    date-time:
+      name: date-time
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date-time
+    from:
+      name: from
+      in: query
+      required: true
+      description: The specific day form which to retrieve resources.
+      schema:
+        type: string
+        format: date
+      example: "2024-07-15"
+    to:
+      name: to
+      in: query
+      description: The specific day to which to retrieve resources.
+      schema:
+        type: string
+        format: date
+      example: "2024-07-15"
+
+  responses:
+    InternalServerErrorResponse:
+      description: An error occurred. See specific status code for details.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorDetail"
+          example:
+            title: Internal server error
+            status: 500
+            code: internal.server.error
+            detail: An unknown server error occurred
+    Doctors:
+      description: Successfully retrieved list of doctors.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - doctors
+            properties:
+              doctors:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Doctor"
+    DoctorTimeslots:
+      description: Successfully retrieved the list of time slots.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - slots
+            properties:
+              slots:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimeSlot"

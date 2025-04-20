@@ -1,0 +1,137 @@
+openapi: 3.0.4
+info:
+  title: Medical History Service API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - description: Medical History Service Endpoint
+    url: /
+tags:
+  - name: Medical History
+paths:
+  /patients/{patientId}/medical-history/files: # Corresponds to /api/patients/{id}/medical-history/files
+    get:
+      tags:
+        - Medical History
+      summary: Get medical history filenames
+      operationId: patientsMedicalHistoryFiles
+      parameters:
+        - $ref: "#/components/parameters/patientId"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+      responses:
+        "200":
+          description: Successfully retrieved the paginated list of medical history filenames.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MedicalHistoryFileList"
+              examples:
+                fileListExample:
+                  summary: Example list of medical history filenames
+                  value:
+                    files:
+                      - consultation_notes_2023-11-20.docx
+                      - xray_report_2024-02-01.pdf
+                    pagination:
+                      page: 0
+                      pageSize: 10
+                      total: 4
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+
+components:
+  schemas:
+    Pagination:
+      type: object
+      description: Structure for paginated list responses.
+      properties:
+        page:
+          type: integer
+          format: int
+        pageSize:
+          type: integer
+          format: int
+        total:
+          type: integer
+          format: int
+      required:
+        - page
+        - pageSize
+        - total
+    MedicalHistoryFileList:
+      type: object
+      description: A paginated list of medical history filenames.
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+        - files
+        - pagination
+    ErrorDetail:
+      type: object
+      description: Standardized error details (RFC 9457).
+      properties:
+        title:
+          type: string
+        code:
+          type: string
+        status:
+          type: integer
+          format: int
+        detail:
+          type: string
+      additionalProperties: true
+      required:
+        - title
+        - code
+        - status
+        - detail
+
+  parameters:
+    patientId:
+      name: patientId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the patient.
+      schema:
+        type: string
+        format: uuid
+    page:
+      name: page
+      in: query
+      required: true
+      description: The page number to retrieve (0-indexed).
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    pageSize:
+      name: pageSize
+      in: query
+      required: true
+      description: The number of items to return per page.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+      example: 20
+
+  responses:
+    InternalServerErrorResponse:
+      description: An error occurred. See specific status code for details.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorDetail"
+          example:
+            title: Internal server error
+            status: 500
+            code: internal.server.error
+            detail: An unknown server error occurred

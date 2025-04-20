@@ -1,0 +1,263 @@
+openapi: 3.0.4
+info:
+  title: Prescription Service API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - description: Prescription Service Endpoint
+    url: /
+tags:
+  - name: Medical History
+paths:
+  /prescriptions: # Corresponds to /api/prescriptions
+    post:
+      tags:
+        - Medical History
+      summary: Create a prescriptions record for a patient
+      operationId: createPrescription
+      requestBody:
+        description: Details of the prescription to be created.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewPrescription"
+      responses:
+        "201":
+          description: Prescription record created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prescription"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+  /prescriptions/{prescriptionId}: # Corresponds to /api/prescriptions/{prescriptionId}
+    get:
+      tags:
+        - Medical History
+      summary: Prescription detail
+      operationId: prescriptionDetail
+      parameters:
+        - $ref: "#/components/parameters/prescriptionId"
+      responses:
+        "200":
+          description: Prescription details, potentially including linked appointment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prescription"
+        "404":
+          description: Prescription not found.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+    patch:
+      tags:
+        - Medical History
+      summary: Update prescription
+      operationId: updatePrescription
+      parameters:
+        - $ref: "#/components/parameters/prescriptionId"
+      requestBody:
+        description: Updated fields of a prescription
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePrescription"
+      responses:
+        "200":
+          description: Prescription details after update.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prescription"
+        "404":
+          description: Prescription not found.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+    delete:
+      tags:
+        - Medical History
+      summary: Delete prescription
+      operationId: deletePrescription
+      parameters:
+        - $ref: "#/components/parameters/prescriptionId"
+      responses:
+        "204":
+          description: Deleted successfully.
+        "404":
+          description: Prescription not found.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+
+components:
+  schemas:
+    NewPrescription:
+      type: object
+      properties:
+        patientId:
+          type: string
+          format: uuid
+        doctorsNote:
+          type: string
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        appointmentId:
+          type: string
+          format: uuid
+      required:
+        - name
+        - start
+        - end
+        - patientId
+    PrescriptionDisplay:
+      type: object
+      description: Basic info about a patient's prescription.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        appointmentId:
+          type: string
+          format: uuid
+      required:
+        - id
+        - name
+        - start
+        - end
+    AppointmentStatus:
+      type: string
+      enum:
+        - requested
+        - cancelled
+        - scheduled
+        - completed
+        - denied
+    AppointmentType:
+      type: string
+      enum:
+        - regular_check
+    AppointmentDisplay:
+      type: object
+      description: Represents an appointment view.
+      properties:
+        id:
+          type: string
+          format: uuid
+        appointmentDateTime:
+          type: string
+          format: date-time
+        doctorName:
+          type: string
+        patientName:
+          type: string
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+      required:
+        - id
+        - appointmentDateTime
+        - doctorName
+        - patientName
+        - status
+        - type
+    Prescription:
+      allOf:
+        - $ref: "#/components/schemas/PrescriptionDisplay"
+        - type: object
+          properties:
+            doctorsNote:
+              type: string
+            appointment:
+              $ref: "#/components/schemas/AppointmentDisplay"
+    UpdatePrescription:
+      type: object
+      properties:
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        appointmentId:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        doctorsNote:
+          type: string
+    ErrorDetail:
+      type: object
+      description: Standardized error details (RFC 9457).
+      properties:
+        title:
+          type: string
+        code:
+          type: string
+        status:
+          type: integer
+          format: int
+        detail:
+          type: string
+      additionalProperties: true
+      required:
+        - title
+        - code
+        - status
+        - detail
+
+  parameters:
+    prescriptionId:
+      name: prescriptionId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of a prescription.
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    InternalServerErrorResponse:
+      description: An error occurred. See specific status code for details.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorDetail"
+          example:
+            title: Internal server error
+            status: 500
+            code: internal.server.error
+            detail: An unknown server error occurred

@@ -1,0 +1,117 @@
+openapi: 3.0.4
+info:
+  title: Patient Service API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - description: Patient Service Endpoint
+    url: /
+tags:
+  - name: Patients
+paths:
+  /patients/{patientId}: # Corresponds to /api/patients/{patientId}
+    get:
+      tags:
+        - Patients
+      summary: Get patient by ID
+      description: Retrieves the details of a specific patient by their unique identifier.
+      operationId: getPatientById
+      parameters:
+        - $ref: "#/components/parameters/patientId"
+      responses:
+        "200":
+          description: Successfully retrieved patient details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Not Found - The specified patient ID does not exist.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+              examples:
+                patientNotFound:
+                  summary: Example patient not found (404)
+                  value:
+                    title: Resource Not Found
+                    status: 404
+                    code: patient.not-found
+                    detail: Patient with ID f47ac10b-58cc-4372-a567-0e02b2c3d479 not found.
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+
+components:
+  schemas:
+    UserRole:
+      type: string
+      enum:
+        - patient
+        - doctor
+    Patient:
+      type: object
+      required:
+        - id
+        - firstName
+        - lastName
+        - email
+        - role
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/UserRole"
+    ErrorDetail:
+      type: object
+      description: Standardized error details (RFC 9457).
+      properties:
+        title:
+          type: string
+        code:
+          type: string
+        status:
+          type: integer
+          format: int
+        detail:
+          type: string
+      additionalProperties: true
+      required:
+        - title
+        - code
+        - status
+        - detail
+
+  parameters:
+    patientId:
+      name: patientId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the patient.
+      schema:
+        type: string
+        format: uuid
+      example: b2c3d4e5-f6a7-8901-2345-67890abcdef1
+
+  responses:
+    InternalServerErrorResponse:
+      description: An error occurred. See specific status code for details.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorDetail"
+          example:
+            title: Internal server error
+            status: 500
+            code: internal.server.error
+            detail: An unknown server error occurred

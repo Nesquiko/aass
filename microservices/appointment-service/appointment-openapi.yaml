@@ -1,0 +1,507 @@
+openapi: 3.0.4
+info:
+  title: Appointment Service API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - description: Appointment Service Endpoint
+    url: /
+tags:
+  - name: Appointments
+paths:
+  /appointments: # Corresponds to /api/appointments
+    post:
+      tags:
+        - Appointments
+      summary: Patient creates an appointment request
+      operationId: requestAppointment
+      requestBody:
+        description: Basic info about the appointment request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewAppointmentRequest"
+      responses:
+        "201":
+          description: Appointment successfully requested.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientAppointment"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+  /appointments/{appointmentId}: # Corresponds to /api/appointments/{appointmentId}
+    post: # Decide
+      tags:
+        - Appointments
+      description: Doctor either accepts or denies patients appointment request.
+      summary: Decide appointment's status
+      operationId: decideAppointment
+      parameters:
+        - $ref: "#/components/parameters/appointmentId"
+      requestBody:
+        description: Whether doctor accepts or denies patients appointment request. Includes resources to reserve on accept.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentDecision"
+      responses:
+        "200":
+          description: Appointment successfully accepted or denied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DoctorAppointment"
+        "409":
+          description: Conflict - Resource unavailable
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+    patch: # Reschedule
+      tags:
+        - Appointments
+      description: Reschedules patients appointment, also changes state of the appointment to requested.
+      summary: Reschedule an appointment
+      operationId: rescheduleAppointment
+      parameters:
+        - $ref: "#/components/parameters/appointmentId"
+      requestBody:
+        description: New date/time for the appointment.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentReschedule"
+      responses:
+        "200":
+          description: Appointment successfully rescheduled (status set to requested).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientAppointment"
+        "409":
+          description: Conflict - Doctor unavailable
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+    delete: # Cancel
+      tags:
+        - Appointments
+      summary: Cancel an appointment
+      operationId: cancelAppointment
+      parameters:
+        - $ref: "#/components/parameters/appointmentId"
+      requestBody:
+        description: Reason for cancelling the appointment and who cancelled.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentCancellation"
+      responses:
+        "204":
+          description: Appointment successfully cancelled.
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+
+  /patients/{patientId}/appointment/{appointmentId}: # Corresponds to /api/patients/...
+    get:
+      tags:
+        - Appointments
+      summary: Get appointment scheduled by patient (Patient View)
+      operationId: patientsAppointment
+      parameters:
+        - $ref: "#/components/parameters/patientId"
+        - $ref: "#/components/parameters/appointmentId"
+      responses:
+        "200":
+          description: Appointment details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientAppointment"
+        "404":
+          description: Appointment or Patient not found, or appointment does not belong to patient.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+  /doctors/{doctorId}/appointment/{appointmentId}: # Corresponds to /api/doctors/...
+    get:
+      tags:
+        - Appointments
+      summary: Get appointment scheduled to a doctor (Doctor View)
+      operationId: doctorsAppointment
+      parameters:
+        - $ref: "#/components/parameters/doctorId"
+        - $ref: "#/components/parameters/appointmentId"
+      responses:
+        "200":
+          description: Appointment details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DoctorAppointment"
+        "404":
+          description: Appointment or Doctor not found, or appointment does not belong to doctor.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+
+components:
+  schemas:
+    UserRole:
+      type: string
+      enum:
+        - patient
+        - doctor
+    AppointmentType:
+      type: string
+      description: The type of the appointment.
+      enum:
+        - regular_check
+    AppointmentStatus:
+      type: string
+      description: The current status of the appointment.
+      enum:
+        - requested
+        - cancelled
+        - scheduled
+        - completed
+        - denied
+      example: scheduled
+    NewAppointmentRequest:
+      type: object
+      required:
+        - patientId
+        - doctorId
+        - appointmentDateTime
+      properties:
+        patientId:
+          type: string
+          format: uuid
+        doctorId:
+          type: string
+          format: uuid
+        appointmentDateTime:
+          type: string
+          format: date-time
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+        conditionId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+    ConditionDisplay: # Needed for AppointmentBase
+      type: object
+      description: Basic info about a patient's condition.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        appointmentsIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+        - id
+        - name
+        - start
+    PrescriptionDisplay: # Needed for AppointmentBase
+      type: object
+      description: Basic info about a patient's prescription.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        appointmentId:
+          type: string
+          format: uuid
+      required:
+        - id
+        - name
+        - start
+        - end
+    AppointmentBase:
+      type: object
+      description: Contains basic information about an appointment.
+      required:
+        - id
+        - appointmentDateTime
+        - type
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        appointmentDateTime:
+          type: string
+          format: date-time
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+        condition:
+          $ref: "#/components/schemas/ConditionDisplay"
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        reason:
+          type: string
+        cancellationReason:
+          type: string
+        canceledBy:
+          $ref: "#/components/schemas/UserRole"
+        denialReason:
+          type: string
+        prescriptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrescriptionDisplay"
+    Patient: # Needed for DoctorAppointment and enrichment
+      type: object
+      required:
+        - id
+        - firstName
+        - lastName
+        - email
+        - role
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/UserRole"
+    SpecializationEnum: # Needed for Doctor
+      type: string
+      description: Medical specialization of a doctor.
+      enum:
+        - surgeon
+        - gastroenterologist
+        - pediatrician
+        - diagnostician
+        - endocrinologist
+        - general_practitioner
+        - cardiologist
+        - dermatologist
+        - neurologist
+        - oncologist
+        - orthopedist
+        - psychiatrist
+        - radiologist
+        - urologist
+        - other
+    Doctor: # Needed for PatientAppointment and enrichment
+      allOf:
+        - $ref: "#/components/schemas/Patient" # Base fields
+        - type: object
+          required:
+            - specialization
+          properties:
+            specialization:
+              $ref: "#/components/schemas/SpecializationEnum"
+    PatientAppointment: # Specific view returned by this service
+      allOf:
+        - $ref: "#/components/schemas/AppointmentBase"
+        - type: object
+          required:
+            - doctor
+          properties:
+            doctor:
+              $ref: "#/components/schemas/Doctor" # Enriched data
+    Facility: # Needed for AppointmentDecision and DoctorAppointment
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+        - id
+        - name
+    Equipment: # Needed for AppointmentDecision and DoctorAppointment
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+        - id
+        - name
+    Medicine: # Needed for AppointmentDecision and DoctorAppointment
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+        - id
+        - name
+    AppointmentDecision: # Input for deciding status
+      type: object
+      description: Data required for staff to accept or reject an appointment request.
+      properties:
+        action:
+          type: string
+          enum:
+            - accept
+            - reject
+          example: accept
+        reason:
+          type: string
+        facilities: # IDs of resources to reserve
+          type: array
+          items:
+            $ref: "#/components/schemas/Facility" # Or just UUIDs if Resource service handles lookup
+        equipment:
+          type: array
+          items:
+            $ref: "#/components/schemas/Equipment"
+        medicine:
+          type: array
+          items:
+            $ref: "#/components/schemas/Medicine"
+      required:
+        - action
+    DoctorAppointment: # Specific view returned by this service
+      allOf:
+        - $ref: "#/components/schemas/AppointmentBase"
+        - type: object
+          required:
+            - patient
+          properties:
+            patient:
+              $ref: "#/components/schemas/Patient" # Enriched data
+            facilities:
+              type: array
+              items:
+                $ref: "#/components/schemas/Facility" # Reserved resources
+            equipment:
+              type: array
+              items:
+                $ref: "#/components/schemas/Equipment"
+            medicine:
+              type: array
+              items:
+                $ref: "#/components/schemas/Medicine"
+    AppointmentCancellation: # Input for cancellation
+      type: object
+      required:
+        - by
+      properties:
+        by:
+          $ref: "#/components/schemas/UserRole"
+        reason:
+          type: string
+    AppointmentReschedule: # Input for rescheduling
+      type: object
+      required:
+        - newAppointmentDateTime
+      properties:
+        newAppointmentDateTime:
+          type: string
+          format: date-time
+        reason:
+          type: string
+    ErrorDetail: # Shared Error Schema
+      type: object
+      description: Standardized error details (RFC 9457).
+      properties:
+        title:
+          type: string
+        code:
+          type: string
+        status:
+          type: integer
+          format: int
+        detail:
+          type: string
+      additionalProperties: true
+      required:
+        - title
+        - code
+        - status
+        - detail
+
+  parameters:
+    appointmentId:
+      name: appointmentId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the appointment.
+      schema:
+        type: string
+        format: uuid
+    patientId:
+      name: patientId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the patient.
+      schema:
+        type: string
+        format: uuid
+    doctorId:
+      name: doctorId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the doctor.
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    InternalServerErrorResponse:
+      description: An error occurred. See specific status code for details.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorDetail"
+          example:
+            title: Internal server error
+            status: 500
+            code: internal.server.error
+            detail: An unknown server error occurred

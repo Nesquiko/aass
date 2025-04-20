@@ -1,0 +1,276 @@
+openapi: 3.0.4
+info:
+  title: Condition Service API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - description: Condition Service Endpoint
+    url: /
+tags:
+  - name: Conditions
+paths:
+  /conditions: # Corresponds to /api/conditions
+    post:
+      tags:
+        - Conditions
+      summary: Create a condition record for a patient
+      operationId: createPatientCondition
+      requestBody:
+        description: Details of the condition to be created.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewCondition"
+      responses:
+        "201":
+          description: Condition record created successfully. Returns the created condition details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConditionDisplay"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+  /conditions/{conditionId}: # Corresponds to /api/conditions/{conditionId}
+    get:
+      tags:
+        - Conditions
+      summary: Condition detail
+      operationId: conditionDetail
+      parameters:
+        - $ref: "#/components/parameters/conditionId"
+      responses:
+        "200":
+          description: Condition details, potentially including linked appointments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Condition" # Includes AppointmentDisplay array
+        "404":
+          description: Condition not found.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+    patch:
+      tags:
+        - Conditions
+      summary: Update a condition
+      operationId: updateCondition
+      parameters:
+        - $ref: "#/components/parameters/conditionId"
+      requestBody:
+        description: Updated condition fields
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCondition"
+      responses:
+        "200":
+          description: Condition details after update.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Condition"
+        "404":
+          description: Condition not found.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+  /conditions/patient/{patientId}: # Corresponds to /api/conditions/patient/{patientId}
+    get:
+      tags:
+        - Conditions
+      summary: Get patient's conditions active on a specific date
+      operationId: conditionsInDate
+      parameters:
+        - $ref: "#/components/parameters/patientId"
+        - $ref: "#/components/parameters/date"
+      responses:
+        "200":
+          $ref: "#/components/responses/Conditions" # Returns list of ConditionDisplay
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+
+components:
+  schemas:
+    ConditionDisplay: # Core display model
+      type: object
+      description: Basic info about a patient's condition.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        appointmentsIds: # Optional: IDs of linked appointments
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+        - id
+        - name
+        - start
+    NewCondition: # Input for creation
+      allOf:
+        - $ref: "#/components/schemas/ConditionDisplay"
+        - type: object
+          properties:
+            patientId:
+              type: string
+              format: uuid
+          required:
+            - patientId
+    AppointmentStatus: # Needed for AppointmentDisplay
+      type: string
+      enum:
+        - requested
+        - cancelled
+        - scheduled
+        - completed
+        - denied
+    AppointmentType: # Needed for AppointmentDisplay
+      type: string
+      enum:
+        - regular_check
+    AppointmentDisplay: # Needed for Condition schema (if enriching)
+      type: object
+      description: Represents an appointment view.
+      properties:
+        id:
+          type: string
+          format: uuid
+        appointmentDateTime:
+          type: string
+          format: date-time
+        doctorName:
+          type: string
+        patientName:
+          type: string
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+      required:
+        - id
+        - appointmentDateTime
+        - doctorName
+        - patientName
+        - status
+        - type
+    Condition: # Full detail model
+      allOf:
+        - $ref: "#/components/schemas/ConditionDisplay"
+        - type: object
+          properties:
+            appointments:
+              type: array
+              items:
+                $ref: "#/components/schemas/AppointmentDisplay"
+          required:
+            - appointments
+    UpdateCondition: # Input for update
+      type: object
+      required:
+        - end
+      properties:
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+          nullable: true
+        patientId: # Usually not updatable, but included for completeness
+          type: string
+          format: uuid
+    ErrorDetail: # Shared Error Schema
+      type: object
+      description: Standardized error details (RFC 9457).
+      properties:
+        title:
+          type: string
+        code:
+          type: string
+        status:
+          type: integer
+          format: int
+        detail:
+          type: string
+      additionalProperties: true
+      required:
+        - title
+        - code
+        - status
+        - detail
+
+  parameters:
+    conditionId:
+      name: conditionId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of a condition.
+      schema:
+        type: string
+        format: uuid
+    patientId:
+      name: patientId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the patient.
+      schema:
+        type: string
+        format: uuid
+    date:
+      name: date
+      in: query
+      required: true
+      description: The specific day (YYYY-MM-DD format).
+      schema:
+        type: string
+        format: date
+      example: "2024-07-15"
+
+  responses:
+    InternalServerErrorResponse:
+      description: An error occurred. See specific status code for details.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorDetail"
+          example:
+            title: Internal server error
+            status: 500
+            code: internal.server.error
+            detail: An unknown server error occurred
+    Conditions:
+      description: Successfully retrieved list of conditions.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - conditions
+            properties:
+              conditions:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConditionDisplay"
