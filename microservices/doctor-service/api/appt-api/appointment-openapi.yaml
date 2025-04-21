@@ -647,7 +647,6 @@ components:
           type: string
         status:
           type: integer
-          format: int32
         detail:
           type: string
       additionalProperties: true

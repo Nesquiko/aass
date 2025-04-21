@@ -224,3 +224,49 @@ func (m *MongoPrescriptionDb) DeletePrescription(ctx context.Context, id uuid.UU
 
 	return nil
 }
+
+func (db *MongoPrescriptionDb) FindPrescriptionsByPatientIdAndRange(
+	ctx context.Context,
+	patientId uuid.UUID,
+	from time.Time,
+	to time.Time,
+) ([]Prescription, error) {
+	prescriptions := make([]Prescription, 0)
+
+	// Query logic: Find prescriptions where the prescription period overlaps
+	// with the query range [from, to].
+	// Overlap occurs if: prescription.start <= to AND prescription.end >= from
+	filter := bson.M{
+		"patientId": patientId,
+		"start":     bson.M{"$lte": to},
+		"end":       bson.M{"$gte": from},
+	}
+
+	opts := options.Find().SetSort(bson.D{{Key: "start", Value: 1}}) // Sort by start date
+
+	cursor, err := db.collection.Find(ctx, filter, opts)
+	if err != nil {
+		// Don't return error for no documents, just an empty slice
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return prescriptions, nil
+		}
+		return nil, fmt.Errorf("FindPrescriptionsByPatientIdAndRange find failed: %w", err)
+	}
+	defer func() {
+		if cerr := cursor.Close(ctx); cerr != nil {
+			slog.WarnContext(ctx, "Failed to close prescription cursor", "error", cerr.Error())
+		}
+	}()
+
+	if err = cursor.All(ctx, &prescriptions); err != nil {
+		slog.ErrorContext(ctx, "Failed to decode prescription documents", "error", err)
+		return nil, fmt.Errorf("FindPrescriptionsByPatientIdAndRange decode failed: %w", err)
+	}
+
+	if err = cursor.Err(); err != nil {
+		slog.ErrorContext(ctx, "Prescription cursor iteration error", "error", err)
+		return nil, fmt.Errorf("FindPrescriptionsByPatientIdAndRange cursor error: %w", err)
+	}
+
+	return prescriptions, nil
+}

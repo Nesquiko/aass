@@ -10,11 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Nesquiko/aass/appointment-service/api"
 	"github.com/Nesquiko/aass/common/server"
-	"github.com/Nesquiko/aass/patient-service/api"
-	apptapi "github.com/Nesquiko/aass/patient-service/api/appt-api"
-	condapi "github.com/Nesquiko/aass/patient-service/api/cond-api"
-	presapi "github.com/Nesquiko/aass/patient-service/api/pres-api"
 )
 
 func Run(ctx context.Context) error {
@@ -27,7 +24,7 @@ func Run(ctx context.Context) error {
 		os.Exit(1)
 	}
 
-	httpLogger := server.SetupLogger("patient-service", cfg.Log.Level)
+	httpLogger := server.SetupLogger("prescription-service", cfg.Log.Level)
 
 	loc, err := time.LoadLocation(cfg.App.Timezone)
 	if err != nil {
@@ -37,7 +34,7 @@ func Run(ctx context.Context) error {
 	httpLogger.Info("loaded timezone", slog.String("tz", loc.String()))
 	time.Local = loc
 
-	db, err := NewMongoPatientDb(ctx, cfg.MongoURI(), cfg.Mongo.Db)
+	db, err := NewMongoAppointmentDb(ctx, cfg.MongoURI(), cfg.Mongo.Db)
 	if err != nil {
 		slog.Error("failed to connect to database", slog.String("error", err.Error()))
 		os.Exit(1)
@@ -49,15 +46,7 @@ func Run(ctx context.Context) error {
 		os.Exit(1)
 	}
 
-	apptClient, _ := apptapi.NewClientWithResponses("http://appointment-service:8080/")
-	condClient, _ := condapi.NewClientWithResponses("http://condition-service:8080/")
-	presClient, _ := presapi.NewClientWithResponses("http://prescription-service:8080")
-	app := PatientApp{
-		db:         db,
-		apptClient: apptClient,
-		condClient: condClient,
-		presClient: presClient,
-	}
+	app := AppointmentApp{db: db}
 	srv := NewServer(app, spec, httpLogger)
 
 	httpServer := &http.Server{

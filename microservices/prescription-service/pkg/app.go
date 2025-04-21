@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -55,13 +57,6 @@ func (a PrescriptionApp) UpdatePatientPrescription(
 	}
 
 	updated := false
-	if updateData.AppointmentId != nil {
-		if existingPrescription.AppointmentId == nil ||
-			*existingPrescription.AppointmentId != *updateData.AppointmentId {
-			existingPrescription.AppointmentId = updateData.AppointmentId
-			updated = true
-		}
-	}
 	if updateData.DoctorsNote != nil {
 		if existingPrescription.DoctorsNote == nil ||
 			*existingPrescription.DoctorsNote != *updateData.DoctorsNote {
@@ -78,12 +73,6 @@ func (a PrescriptionApp) UpdatePatientPrescription(
 	if updateData.Name != nil {
 		if existingPrescription.Name != *updateData.Name {
 			existingPrescription.Name = *updateData.Name
-			updated = true
-		}
-	}
-	if updateData.PatientId != nil {
-		if existingPrescription.PatientId != *updateData.PatientId {
-			existingPrescription.PatientId = *updateData.PatientId
 			updated = true
 		}
 	}
@@ -118,4 +107,27 @@ func (a PrescriptionApp) UpdatePatientPrescription(
 	}
 
 	return dataPrescToPresc(updatedDbPrescription), nil
+}
+
+func (a PrescriptionApp) GetPrescriptionsByPatientAndRange(
+	ctx context.Context,
+	patientId uuid.UUID,
+	from time.Time,
+	to time.Time,
+) ([]api.PrescriptionDisplay, error) {
+	dbPrescriptions, err := a.db.FindPrescriptionsByPatientIdAndRange(ctx, patientId, from, to)
+	if err != nil {
+		slog.ErrorContext(
+			ctx,
+			"Failed to get prescriptions from DB",
+			"patientId",
+			patientId,
+			"error",
+			err,
+		)
+		return nil, fmt.Errorf("failed to retrieve prescriptions: %w", err)
+	}
+
+	apiPrescriptions := dataPrescSliceToPrescDisplaySlice(dbPrescriptions)
+	return apiPrescriptions, nil
 }

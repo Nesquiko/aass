@@ -12,29 +12,29 @@ import (
 	"github.com/go-chi/httplog/v2"
 	"github.com/google/uuid"
 
+	"github.com/Nesquiko/aass/appointment-service/api"
 	"github.com/Nesquiko/aass/common/server"
-	"github.com/Nesquiko/aass/prescription-service/api"
 )
 
 type ApiError struct {
 	api.ErrorDetail
 }
 
-type PrescriptionServer struct{ app PrescriptionApp }
+type AppointmentServer struct{ app AppointmentApp }
 
 func (e *ApiError) Error() string {
 	return fmt.Sprintf("error %q, status %d", e.Title, e.Status)
 }
 
 func NewServer(
-	app PrescriptionApp,
+	app AppointmentApp,
 	spec *openapi3.T,
 	middlewareLogger *httplog.Logger,
 ) http.Handler {
 	r := chi.NewMux()
 	r.Use(server.Heartbeat())
 	r.Use(server.OptionsMiddleware)
-	srv := PrescriptionServer{app: app}
+	srv := AppointmentServer{app: app}
 
 	validationOpts := server.OapiValidationOptions{
 		Spec:         spec,

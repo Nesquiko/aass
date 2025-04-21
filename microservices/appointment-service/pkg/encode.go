@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Nesquiko/aass/appointment-service/api"
 	"github.com/Nesquiko/aass/common/server"
-	"github.com/Nesquiko/aass/patient-service/api"
 )
 
 func encode[T any](w http.ResponseWriter, status int, response T) {

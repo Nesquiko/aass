@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -64,12 +65,6 @@ func (a ConditionApp) UpdatePatientCondition(
 			updated = true
 		}
 	}
-	if updateData.PatientId != nil {
-		if existingCondition.PatientId != *updateData.PatientId {
-			existingCondition.PatientId = *updateData.PatientId
-			updated = true
-		}
-	}
 	if updateData.Start != nil {
 		if !existingCondition.Start.Equal(*updateData.Start) {
 			existingCondition.Start = *updateData.Start
@@ -116,5 +111,30 @@ func (a ConditionApp) PatientConditionsOnDate(
 	}
 
 	apiConditions := Map(dataConditions, dataCondToCondDisplay)
+	return apiConditions, nil
+}
+
+func (a ConditionApp) GetConditionsByPatientAndRange(
+	ctx context.Context,
+	patientId uuid.UUID,
+	from time.Time,
+	to time.Time,
+) ([]api.ConditionDisplay, error) {
+	// Fetch from DB
+	dbConditions, err := a.db.FindConditionsByPatientIdAndRange(ctx, patientId, from, to)
+	if err != nil {
+		slog.ErrorContext(
+			ctx,
+			"Failed to get conditions from DB",
+			"patientId",
+			patientId,
+			"error",
+			err,
+		)
+		return nil, fmt.Errorf("failed to retrieve conditions: %w", err)
+	}
+
+	apiConditions := Map(dbConditions, dataCondToCondDisplay)
+
 	return apiConditions, nil
 }

@@ -21,10 +21,14 @@ var (
 )
 
 type MongoResourceDb struct {
-	collection *mongo.Collection
+	collection         *mongo.Collection
+	reservesCollection *mongo.Collection
 }
 
-const collection = "resources"
+const (
+	resourceCollection     = "resources"
+	reservcationCollection = "reservations"
+)
 
 func NewMongoResourceDb(ctx context.Context, uri string, db string) (*MongoResourceDb, error) {
 	mongoDb, err := mongodb.ConnectMongo(ctx, uri, db)
@@ -33,7 +37,7 @@ func NewMongoResourceDb(ctx context.Context, uri string, db string) (*MongoResou
 		return nil, fmt.Errorf("NewMongoResourceDb: %w", err)
 	}
 
-	coll := mongoDb.Collection(collection)
+	coll := mongoDb.Collection(resourceCollection)
 	indexModel := mongo.IndexModel{
 		Keys:    bson.D{{Key: "type", Value: 1}},
 		Options: options.Index().SetName("idx_resource_type"),
@@ -43,7 +47,29 @@ func NewMongoResourceDb(ctx context.Context, uri string, db string) (*MongoResou
 		slog.WarnContext(ctx, "Could not ensure resources index", "error", err)
 	}
 
-	return &MongoResourceDb{collection: coll}, nil
+	reservationColl := mongoDb.Collection(reservcationCollection)
+	reservationIdxs := []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "resourceId", Value: 1},
+				{Key: "startTime", Value: 1},
+			},
+			Options: options.Index().SetName("idx_reservation_resource_time"),
+		},
+		{
+			Keys:    bson.D{{Key: "appointmentId", Value: 1}},
+			Options: options.Index().SetName("idx_reservation_appointmentId"),
+		},
+	}
+
+	for _, idx := range reservationIdxs {
+		_, err = reservationColl.Indexes().CreateOne(ctx, idx)
+		if err != nil {
+			slog.WarnContext(ctx, "Could not ensure reservation index", "error", err)
+		}
+	}
+
+	return &MongoResourceDb{collection: coll, reservesCollection: reservationColl}, nil
 }
 
 type ResourceType string
@@ -127,7 +153,7 @@ func (m *MongoResourceDb) CreateReservation(
 		"endTime":       bson.M{"$gt": startTime},
 	}
 
-	count, err := m.collection.CountDocuments(ctx, conflictFilter)
+	count, err := m.reservesCollection.CountDocuments(ctx, conflictFilter)
 	if err != nil {
 		return Reservation{}, fmt.Errorf("CreateReservation conflict check failed: %w", err)
 	}

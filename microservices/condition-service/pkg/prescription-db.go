@@ -201,3 +201,52 @@ func (m *MongoConditionDb) FindConditionsByPatientIdAndDate(
 
 	return conditions, nil
 }
+
+func (m *MongoConditionDb) FindConditionsByPatientIdAndRange(
+	ctx context.Context,
+	patientId uuid.UUID,
+	from time.Time,
+	to time.Time,
+) ([]Condition, error) {
+	conditions := make([]Condition, 0)
+
+	// Query logic: Find conditions where the condition period overlaps
+	// with the query range [from, to].
+	// Overlap occurs if: condition.start <= to AND (condition.end >= from OR condition.end IS NULL)
+	filter := bson.M{
+		"patientId": patientId,
+		"start":     bson.M{"$lte": to}, // Condition must start before or on the 'to' date
+		"$or": []bson.M{
+			{"end": bson.M{"$gte": from}}, // Condition must end after or on the 'from' date
+			{"end": nil},                  // Or condition has no end date (ongoing)
+		},
+	}
+
+	opts := options.Find().SetSort(bson.D{{Key: "start", Value: 1}}) // Sort by start date
+
+	cursor, err := m.collection.Find(ctx, filter, opts)
+	if err != nil {
+		// Don't return error for no documents, just an empty slice
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return conditions, nil
+		}
+		return nil, fmt.Errorf("FindConditionsByPatientIdAndRange find failed: %w", err)
+	}
+	defer func() {
+		if cerr := cursor.Close(ctx); cerr != nil {
+			slog.WarnContext(ctx, "Failed to close condition cursor", "error", cerr.Error())
+		}
+	}()
+
+	if err = cursor.All(ctx, &conditions); err != nil {
+		slog.ErrorContext(ctx, "Failed to decode condition documents", "error", err)
+		return nil, fmt.Errorf("FindConditionsByPatientIdAndRange decode failed: %w", err)
+	}
+
+	if err = cursor.Err(); err != nil {
+		slog.ErrorContext(ctx, "Condition cursor iteration error", "error", err)
+		return nil, fmt.Errorf("FindConditionsByPatientIdAndRange cursor error: %w", err)
+	}
+
+	return conditions, nil
+}

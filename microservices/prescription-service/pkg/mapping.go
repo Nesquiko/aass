@@ -36,3 +36,21 @@ func dataPrescToPresc(p Prescription) api.Prescription {
 	}
 	return presc
 }
+
+func dataPrescToPrescDisplay(p Prescription) api.PrescriptionDisplay {
+	return api.PrescriptionDisplay{
+		Id:            &p.Id,
+		Name:          p.Name,
+		Start:         p.Start,
+		End:           p.End,
+		AppointmentId: p.AppointmentId,
+	}
+}
+
+func dataPrescSliceToPrescDisplaySlice(prescs []Prescription) []api.PrescriptionDisplay {
+	apiPrescs := make([]api.PrescriptionDisplay, len(prescs))
+	for i, p := range prescs {
+		apiPrescs[i] = dataPrescToPrescDisplay(p)
+	}
+	return apiPrescs
+}

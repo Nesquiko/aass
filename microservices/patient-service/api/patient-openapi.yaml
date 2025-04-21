@@ -85,6 +85,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ErrorDetail"
+              examples:
+                patientEmailNotFound: # Added example
+                  summary: Example patient email not found (404)
+                  value:
+                    title: Resource Not Found
+                    status: 404
+                    code: patient.email-not-found # Specific code for email lookup
+                    detail: Patient with email unknown.patient@example.com not found.
         "500":
           $ref: "#/components/responses/InternalServerErrorResponse"
 
@@ -117,6 +125,42 @@ paths:
                     title: Resource Not Found
                     status: 404
                     code: patient.not-found # Code for ID lookup
+                    detail: Patient with ID f47ac10b-58cc-4372-a567-0e02b2c3d479 not found.
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+
+  # <<< NEW ENDPOINT ADDED HERE >>>
+  /patients/{patientId}/calendar:
+    get:
+      tags:
+        - Patients
+      summary: Get patient's calendar view
+      description: Retrieves a consolidated view of a patient's appointments, conditions, and prescriptions within a specified time range. This view is aggregated by the Patient Service.
+      operationId: getPatientCalendar
+      parameters:
+        - $ref: "#/components/parameters/patientId"
+        - $ref: "#/components/parameters/from" # Reference new 'from' parameter
+        - $ref: "#/components/parameters/to" # Reference new 'to' parameter
+      responses:
+        "200":
+          description: Successfully retrieved patient calendar view for the specified time range.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientCalendarView" # Reference new schema
+        "404": # Patient not found
+          description: Not Found - The specified patient ID does not exist.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+              examples:
+                patientNotFoundForCalendar:
+                  summary: Example patient not found for calendar (404)
+                  value:
+                    title: Resource Not Found
+                    status: 404
+                    code: patient.not-found
                     detail: Patient with ID f47ac10b-58cc-4372-a567-0e02b2c3d479 not found.
         "500":
           $ref: "#/components/responses/InternalServerErrorResponse"
@@ -170,6 +214,112 @@ components:
           format: email
         role:
           $ref: "#/components/schemas/UserRole"
+
+    # --- Schemas needed for PatientCalendarView ---
+    AppointmentStatus: # Copied from Appointment Service spec for reference
+      type: string
+      enum:
+        - requested
+        - cancelled
+        - scheduled
+        - completed
+        - denied
+      example: scheduled
+    AppointmentType: # Copied from Appointment Service spec for reference
+      type: string
+      enum:
+        - regular_check
+      example: regular_check
+    AppointmentDisplay: # Simplified view, assuming Patient Service gets this data
+      type: object
+      description: Represents an appointment relevant to the patient's calendar.
+      properties:
+        id:
+          type: string
+          format: uuid
+        appointmentDateTime:
+          type: string
+          format: date-time
+        doctorName: # Assuming Patient service can get/construct this
+          type: string
+          example: "Dr. Gregory House"
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+      required:
+        - id
+        - appointmentDateTime
+        - doctorName
+        - status
+        - type
+    ConditionDisplay: # Simplified view
+      type: object
+      description: Represents a condition relevant to the patient's calendar.
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Hypertension"
+        start:
+          type: string
+          format: date-time
+        end: # Optional end date
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - name
+        - start
+    PrescriptionDisplay: # Simplified view
+      type: object
+      description: Represents a prescription relevant to the patient's calendar.
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Lisinopril 10mg"
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - start
+        - end
+    # --- End Schemas for PatientCalendarView ---
+
+    # <<< NEW SCHEMA ADDED HERE >>>
+    PatientCalendarView:
+      type: object
+      description: Consolidated view of a patient's calendar items within a time range.
+      properties:
+        appointments:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppointmentDisplay"
+        conditions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConditionDisplay"
+        prescriptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrescriptionDisplay"
+      # Decide if empty arrays are acceptable or if the fields are required
+      # required:
+      #   - appointments
+      #   - conditions
+      #   - prescriptions
+
     ErrorDetail:
       type: object
       description: Standardized error details (RFC 9457).
@@ -200,6 +350,25 @@ components:
         type: string
         format: uuid
       example: b2c3d4e5-f6a7-8901-2345-67890abcdef1
+    # <<< NEW PARAMETERS ADDED HERE >>>
+    from:
+      name: from
+      in: query
+      required: true # Make 'from' required for calendar view
+      description: The start date (inclusive) for retrieving calendar items (YYYY-MM-DD format).
+      schema:
+        type: string
+        format: date
+      example: "2024-07-01"
+    to:
+      name: to
+      in: query
+      required: true # Make 'to' required for calendar view
+      description: The end date (inclusive) for retrieving calendar items (YYYY-MM-DD format).
+      schema:
+        type: string
+        format: date
+      example: "2024-07-31"
 
   responses:
     InternalServerErrorResponse:

@@ -4,13 +4,14 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/Nesquiko/aass/common/server"
 	"github.com/Nesquiko/aass/prescription-service/api"
 )
 
 // CreatePrescription implements api.ServerInterface.
-func (s ResourceServer) CreatePrescription(w http.ResponseWriter, r *http.Request) {
+func (s PrescriptionServer) CreatePrescription(w http.ResponseWriter, r *http.Request) {
 	req, decodeErr := Decode[api.NewPrescription](w, r)
 	if decodeErr != nil {
 		encodeError(w, decodeErr)
@@ -28,10 +29,10 @@ func (s ResourceServer) CreatePrescription(w http.ResponseWriter, r *http.Reques
 }
 
 // DeletePrescription implements api.ServerInterface.
-func (s ResourceServer) DeletePrescription(
+func (s PrescriptionServer) DeletePrescription(
 	w http.ResponseWriter,
 	r *http.Request,
-	prescriptionId api.PrescriptionId,
+	prescriptionId api.PathPrescriptionId,
 ) {
 	err := s.app.db.DeletePrescription(r.Context(), prescriptionId)
 	if err != nil {
@@ -57,10 +58,10 @@ func (s ResourceServer) DeletePrescription(
 }
 
 // PrescriptionDetail implements api.ServerInterface.
-func (s ResourceServer) PrescriptionDetail(
+func (s PrescriptionServer) PrescriptionDetail(
 	w http.ResponseWriter,
 	r *http.Request,
-	prescriptionId api.PrescriptionId,
+	prescriptionId api.PathPrescriptionId,
 ) {
 	prescription, err := s.app.PrescriptionById(r.Context(), prescriptionId)
 	if err != nil {
@@ -84,11 +85,54 @@ func (s ResourceServer) PrescriptionDetail(
 	encode(w, http.StatusOK, prescription)
 }
 
-// UpdatePrescription implements api.ServerInterface.
-func (s ResourceServer) UpdatePrescription(
+func (s PrescriptionServer) GetPrescriptionsByPatientAndRange(
 	w http.ResponseWriter,
 	r *http.Request,
-	prescriptionId api.PrescriptionId,
+	params api.GetPrescriptionsByPatientAndRangeParams,
+) {
+	// Convert openapi_types.Date to time.Time
+	// Assuming dates represent the start of the day in the service's local timezone
+	from := params.From.Time
+	// Make 'to' date inclusive by setting time to end of day
+	to := params.To.Time
+	endOfDayTo := time.Date(to.Year(), to.Month(), to.Day(), 23, 59, 59, 999999999, to.Location())
+
+	prescriptions, err := s.app.GetPrescriptionsByPatientAndRange(
+		r.Context(),
+		params.PatientId,
+		from,
+		endOfDayTo,
+	)
+	if err != nil {
+		// Handle potential errors (e.g., database connection issues)
+		slog.ErrorContext(
+			r.Context(),
+			server.UnexpectedError,
+			"error",
+			err.Error(),
+			"where",
+			"GetPrescriptionsByPatientAndRange",
+			"patientId",
+			params.PatientId,
+		)
+		encodeError(w, internalServerError()) // Return generic 500
+		return
+	}
+
+	// Wrap the result in the structure defined in the OpenAPI response
+	response := api.Prescriptions{
+		Prescriptions: prescriptions,
+	}
+
+	// Encode the successful response (even if the list is empty)
+	encode(w, http.StatusOK, response)
+}
+
+// UpdatePrescription implements api.ServerInterface.
+func (s PrescriptionServer) UpdatePrescription(
+	w http.ResponseWriter,
+	r *http.Request,
+	prescriptionId api.PathPrescriptionId,
 ) {
 	req, decodeErr := Decode[api.UpdatePrescription](w, r)
 	if decodeErr != nil {
