@@ -16,7 +16,7 @@ services:
       - doctor-service
       # - appointment-service
       # - condition-service
-      # - prescription-service
+      - prescription-service
       - resource-service
     # - medical-history-service
 
@@ -98,6 +98,19 @@ services:
     container_name: resource-service
     env_file:
       - ./resource-service/local.env
+    networks:
+      - medical_network
+    restart: unless-stopped
+    depends_on:
+      - mongo_db
+
+  prescription-service:
+    build:
+      context: .
+      dockerfile: ./prescription-service/Dockerfile
+    container_name: prescription-service
+    env_file:
+      - ./prescription-service/local.env
     networks:
       - medical_network
     restart: unless-stopped
