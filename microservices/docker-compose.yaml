@@ -15,7 +15,7 @@ services:
       - patient-service
       - doctor-service
       # - appointment-service
-      # - condition-service
+      - condition-service
       - prescription-service
       - resource-service
       - medical-history-service
@@ -127,6 +127,19 @@ services:
     networks:
       - medical_network
     restart: unless-stopped
+
+  condition-service:
+    build:
+      context: .
+      dockerfile: ./condition-service/Dockerfile
+    container_name: condition-service
+    env_file:
+      - ./condition-service/local.env
+    networks:
+      - medical_network
+    restart: unless-stopped
+    depends_on:
+      - mongo_db
 
 networks:
   medical_network:
