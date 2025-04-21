@@ -18,7 +18,7 @@ services:
       # - condition-service
       - prescription-service
       - resource-service
-    # - medical-history-service
+      - medical-history-service
 
   mongo_db:
     image: mongo:7.0-rc
@@ -116,6 +116,17 @@ services:
     restart: unless-stopped
     depends_on:
       - mongo_db
+
+  medical-history-service:
+    build:
+      context: .
+      dockerfile: ./medical-history-service/Dockerfile
+    container_name: medical-history-service
+    env_file:
+      - ./medical-history-service/local.env
+    networks:
+      - medical_network
+    restart: unless-stopped
 
 networks:
   medical_network:
