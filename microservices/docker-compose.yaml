@@ -11,9 +11,9 @@ services:
       - medical_network
     restart: unless-stopped
     depends_on:
+      - auth-service
       - patient-service
       - doctor-service
-    # - auth-service
     # - appointment-service
     # - condition-service
     # - prescription-service
@@ -76,6 +76,20 @@ services:
     restart: unless-stopped
     depends_on:
       - mongo_db
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./auth-service/Dockerfile
+    container_name: auth-service
+    env_file:
+      - ./auth-service/local.env
+    networks:
+      - medical_network
+    restart: unless-stopped
+    depends_on:
+      - doctor-service
+      - patient-service
 
 networks:
   medical_network:

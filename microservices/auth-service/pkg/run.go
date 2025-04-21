@@ -10,9 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Nesquiko/aass/auth-service/api"
+	doctorapi "github.com/Nesquiko/aass/auth-service/api/doctor-api"
+	patientapi "github.com/Nesquiko/aass/auth-service/api/patient-api"
 	"github.com/Nesquiko/aass/common/server"
-	"github.com/Nesquiko/aass/doctor-service/api"
-	apptapi "github.com/Nesquiko/aass/doctor-service/api/appt-api"
 )
 
 func Run(ctx context.Context) error {
@@ -25,7 +26,7 @@ func Run(ctx context.Context) error {
 		os.Exit(1)
 	}
 
-	httpLogger := server.SetupLogger("doctor-service", cfg.Log.Level)
+	httpLogger := server.SetupLogger("auth-service", cfg.Log.Level)
 
 	loc, err := time.LoadLocation(cfg.App.Timezone)
 	if err != nil {
@@ -35,20 +36,15 @@ func Run(ctx context.Context) error {
 	httpLogger.Info("loaded timezone", slog.String("tz", loc.String()))
 	time.Local = loc
 
-	db, err := NewMongoDoctorDb(ctx, cfg.MongoURI(), cfg.Mongo.Db)
-	if err != nil {
-		slog.Error("failed to connect to database", slog.String("error", err.Error()))
-		os.Exit(1)
-	}
-
 	spec, err := api.GetSwagger()
 	if err != nil {
 		slog.Error("failed to load OpenApi spec", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	apptClient, _ := apptapi.NewClientWithResponses("http://appointment-service:8080/")
-	app := DoctorApp{db: db, apptClient: apptClient}
+	patientClient, _ := patientapi.NewClientWithResponses("http://patient-service:8080/")
+	doctorClient, _ := doctorapi.NewClientWithResponses("http://doctor-service:8080/")
+	app := AuthApp{patientClient: patientClient, doctorClient: doctorClient}
 	srv := NewServer(app, spec, httpLogger)
 
 	httpServer := &http.Server{
