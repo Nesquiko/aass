@@ -11,9 +11,9 @@ services:
       - medical_network
     restart: unless-stopped
     depends_on:
-      # - auth-service
       - patient-service
-    # - doctor-service
+      - doctor-service
+    # - auth-service
     # - appointment-service
     # - condition-service
     # - prescription-service
@@ -47,7 +47,7 @@ services:
       ME_CONFIG_BASICAUTH_USERNAME: mexpress
       ME_CONFIG_BASICAUTH_PASSWORD: mexpress
     depends_on:
-      - mongo
+      - mongo_db
     networks:
       - medical_network
 
@@ -62,7 +62,20 @@ services:
       - medical_network
     restart: unless-stopped
     depends_on:
-      - mongo
+      - mongo_db
+
+  doctor-service:
+    build:
+      context: .
+      dockerfile: ./doctor-service/Dockerfile
+    container_name: doctor-service
+    env_file:
+      - ./doctor-service/local.env
+    networks:
+      - medical_network
+    restart: unless-stopped
+    depends_on:
+      - mongo_db
 
 networks:
   medical_network:

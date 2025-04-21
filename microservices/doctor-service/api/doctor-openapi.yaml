@@ -16,6 +16,7 @@ paths:
       tags:
         - Doctors
       summary: Get doctors
+      description: Retrieves a list of all doctors.
       operationId: getDoctors
       responses:
         "200":
@@ -75,7 +76,7 @@ paths:
       description: Retrieves list of doctors which are available on the date and in the given time
       operationId: availableDoctors
       parameters:
-        - $ref: "#/components/parameters/date-time"
+        - $ref: "#/components/parameters/dateTime" # Reference updated parameter name
       responses:
         "200":
           description: Successfully retrieved doctor details.
@@ -90,6 +91,40 @@ paths:
                       $ref: "#/components/schemas/Doctor"
         "500":
           $ref: "#/components/responses/InternalServerErrorResponse"
+
+  /doctors/email/{email}: # <<< NEW PATH for lookup by email
+    get:
+      tags:
+        - Doctors
+      summary: Get doctor by email
+      description: Retrieves the details of a specific doctor by their unique email address.
+      operationId: getDoctorByEmail
+      parameters:
+        - $ref: "#/components/parameters/doctorEmail" # Reference the new parameter
+      responses:
+        "200":
+          description: Successfully retrieved doctor details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Doctor"
+        "404":
+          description: Not Found - No doctor with the specified email address exists.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+              examples:
+                doctorEmailNotFound:
+                  summary: Example doctor email not found (404)
+                  value:
+                    title: Resource Not Found
+                    status: 404
+                    code: doctor.email-not-found # Specific error code
+                    detail: Doctor with email unknown.doctor@example.com not found.
+        "500":
+          $ref: "#/components/responses/InternalServerErrorResponse"
+
   /doctors/{doctorId}: # Corresponds to /api/doctors/{doctorId}
     get:
       tags:
@@ -122,6 +157,7 @@ paths:
                     detail: Doctor with ID b2c3d4e5-f6a7-8901-2345-67890abcdef1 not found.
         "500":
           $ref: "#/components/responses/InternalServerErrorResponse"
+
   /doctors/{doctorId}/calendar: # Corresponds to /api/doctors/{doctorId}/calendar
     get:
       tags:
@@ -142,6 +178,7 @@ paths:
                 $ref: "#/components/schemas/DoctorCalendar"
         "500":
           $ref: "#/components/responses/InternalServerErrorResponse"
+
   /doctors/{doctorId}/timeslots: # Corresponds to /api/doctors/{doctorId}/timeslots
     get:
       tags:
@@ -160,14 +197,14 @@ paths:
 
 components:
   schemas:
+    # ... (UserRole, Patient, SpecializationEnum, NewDoctorRequest, Doctor, TimeSlot, etc. remain the same) ...
     UserRole:
       type: string
       enum:
-        # Removed 'patient' as this service only deals with doctors
         - doctor
-      default: doctor # Default role for this service context
-      readOnly: true # Role is fixed for doctors in this service
-    Patient: # Base schema used by Doctor
+      default: doctor
+      readOnly: true
+    Patient:
       type: object
       required:
         - id
@@ -188,7 +225,7 @@ components:
           type: string
           format: email
         role:
-          $ref: "#/components/schemas/UserRole" # Will always be 'doctor' here
+          $ref: "#/components/schemas/UserRole"
     SpecializationEnum:
       type: string
       description: Medical specialization of a doctor.
@@ -209,7 +246,7 @@ components:
         - urologist
         - other
       example: diagnostician
-    NewDoctorRequest: # Schema for the POST request body
+    NewDoctorRequest:
       type: object
       required:
         - email
@@ -231,9 +268,9 @@ components:
           example: House
         specialization:
           $ref: "#/components/schemas/SpecializationEnum"
-    Doctor: # Core entity of this service
+    Doctor:
       allOf:
-        - $ref: "#/components/schemas/Patient" # Inherits base fields
+        - $ref: "#/components/schemas/Patient"
         - type: object
           required:
             - specialization
@@ -257,7 +294,7 @@ components:
       required:
         - time
         - status
-    AppointmentStatus: # Needed for AppointmentDisplay
+    AppointmentStatus:
       type: string
       enum:
         - requested
@@ -266,11 +303,11 @@ components:
         - completed
         - denied
       example: scheduled
-    AppointmentType: # Needed for AppointmentDisplay
+    AppointmentType:
       type: string
       enum:
         - regular_check
-    AppointmentDisplay: # Needed for DoctorCalendar
+    AppointmentDisplay:
       type: object
       description: Represents an appointment view.
       properties:
@@ -295,7 +332,7 @@ components:
         - patientName
         - status
         - type
-    DoctorCalendar: # Used for calendar endpoint response
+    DoctorCalendar:
       type: object
       properties:
         appointments:
@@ -332,6 +369,15 @@ components:
         type: string
         format: uuid
       example: b2c3d4e5-f6a7-8901-2345-67890abcdef1
+    doctorEmail: # <<< NEW PARAMETER DEFINITION
+      name: email
+      in: path
+      required: true
+      description: The unique email address of the doctor.
+      schema:
+        type: string
+        format: email # Use email format validation
+      example: gregory.house@example.com
     date:
       name: date
       in: query
@@ -341,18 +387,20 @@ components:
         type: string
         format: date
       example: "2024-07-15"
-    date-time:
-      name: date-time
+    dateTime: # Renamed from date-time for consistency/clarity
+      name: dateTime # Changed name from date-time
       in: query
       required: true
+      description: The specific date and time (ISO 8601 format).
       schema:
         type: string
-        format: date-time
+        format: date-time # Keep format as date-time
+      example: "2024-07-15T10:30:00Z"
     from:
       name: from
       in: query
       required: true
-      description: The specific day form which to retrieve resources.
+      description: The start date (inclusive) for retrieving resources (YYYY-MM-DD format).
       schema:
         type: string
         format: date
@@ -360,11 +408,11 @@ components:
     to:
       name: to
       in: query
-      description: The specific day to which to retrieve resources.
+      description: The end date (inclusive) for retrieving resources (YYYY-MM-DD format).
       schema:
         type: string
         format: date
-      example: "2024-07-15"
+      example: "2024-07-20"
 
   responses:
     InternalServerErrorResponse:
