@@ -14,10 +14,10 @@ services:
       - auth-service
       - patient-service
       - doctor-service
-    # - appointment-service
-    # - condition-service
-    # - prescription-service
-    # - resource-service
+      # - appointment-service
+      # - condition-service
+      # - prescription-service
+      - resource-service
     # - medical-history-service
 
   mongo_db:
@@ -90,6 +90,19 @@ services:
     depends_on:
       - doctor-service
       - patient-service
+
+  resource-service:
+    build:
+      context: .
+      dockerfile: ./resource-service/Dockerfile
+    container_name: resource-service
+    env_file:
+      - ./resource-service/local.env
+    networks:
+      - medical_network
+    restart: unless-stopped
+    depends_on:
+      - mongo_db
 
 networks:
   medical_network:
