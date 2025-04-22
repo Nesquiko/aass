@@ -11,6 +11,8 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/Nesquiko/aass/appointment-service/api"
+	doctorapi "github.com/Nesquiko/aass/appointment-service/api/doctor-api"
+	patientapi "github.com/Nesquiko/aass/appointment-service/api/patient-api"
 )
 
 var (
@@ -27,7 +29,9 @@ var (
 const defaultAppointmentDuration = 1 * time.Hour
 
 type AppointmentApp struct {
-	db *MongoAppointmentDb
+	db        *MongoAppointmentDb
+	docClient *doctorapi.ClientWithResponses
+	patClient *patientapi.ClientWithResponses
 }
 
 // NewAppointmentApp creates a new AppointmentApp instance
@@ -144,9 +148,6 @@ func (a *AppointmentApp) DecideAppointment(
 	if req.Action == api.Reject && (req.Reason == nil || *req.Reason == "") {
 		return Appointment{}, ErrMissingDenialReason
 	}
-
-	// TODO: Add logic here or in DB layer to handle resource reservation IDs (req.Equipment, req.Facilities, req.Medicine)
-	// For MVP, we ignore these for now.
 
 	updatedAppt, err := a.db.DecideAppointment(ctx, appointmentId, string(req.Action), req.Reason)
 	if err != nil {

@@ -40,12 +40,25 @@ func (s AppointmentServer) RequestAppointment(w http.ResponseWriter, r *http.Req
 
 	createdAppt, err := s.app.RequestAppointment(r.Context(), req)
 	if err != nil {
-		handleAppError(w, err, "Appointment", uuid.Nil) // ID not known yet
+		handleAppError(w, err, "Appointment", uuid.Nil)
 		return
 	}
 
-	// Return the basic details of the created appointment
-	encode(w, http.StatusCreated, mapAppointmentToPatientAppointment(createdAppt))
+	doc, err := s.app.docClient.GetDoctorByIdWithResponse(r.Context(), createdAppt.DoctorId)
+	if err != nil {
+		slog.ErrorContext(
+			r.Context(),
+			"Can't fetch doc",
+			"id",
+			createdAppt.DoctorId,
+			"error",
+			err.Error(),
+		)
+		encodeError(w, internalServerError())
+		return
+	}
+
+	encode(w, http.StatusCreated, mapAppointmentToPatientAppointment(createdAppt, *doc.JSON200))
 }
 
 // CancelAppointment implements api.ServerInterface.
@@ -108,7 +121,21 @@ func (s AppointmentServer) RescheduleAppointment(
 		return
 	}
 
-	encode(w, http.StatusOK, mapAppointmentToPatientAppointment(updatedAppt))
+	doc, err := s.app.docClient.GetDoctorByIdWithResponse(r.Context(), updatedAppt.DoctorId)
+	if err != nil {
+		slog.ErrorContext(
+			r.Context(),
+			"Can't fetch doc",
+			"id",
+			updatedAppt.DoctorId,
+			"error",
+			err.Error(),
+		)
+		encodeError(w, internalServerError())
+		return
+	}
+
+	encode(w, http.StatusOK, mapAppointmentToPatientAppointment(updatedAppt, *doc.JSON200))
 }
 
 // DecideAppointment implements api.ServerInterface.
@@ -140,7 +167,21 @@ func (s AppointmentServer) DecideAppointment(
 		return
 	}
 
-	encode(w, http.StatusOK, mapAppointmentToDoctorAppointment(updatedAppt))
+	pat, err := s.app.patClient.GetPatientByIdWithResponse(r.Context(), updatedAppt.PatientId)
+	if err != nil {
+		slog.ErrorContext(
+			r.Context(),
+			"Can't fetch pat",
+			"id",
+			updatedAppt.DoctorId,
+			"error",
+			err.Error(),
+		)
+		encodeError(w, internalServerError())
+		return
+	}
+
+	encode(w, http.StatusOK, mapAppointmentToDoctorAppointment(updatedAppt, *pat.JSON200))
 }
 
 // GetDoctorAppointmentById implements api.ServerInterface.
@@ -172,7 +213,21 @@ func (s AppointmentServer) GetDoctorAppointmentById(
 		return
 	}
 
-	apiAppt := mapAppointmentToDoctorAppointment(appt) // Use base for now
+	pat, err := s.app.patClient.GetPatientByIdWithResponse(r.Context(), appt.PatientId)
+	if err != nil {
+		slog.ErrorContext(
+			r.Context(),
+			"Can't fetch pat",
+			"id",
+			appt.DoctorId,
+			"error",
+			err.Error(),
+		)
+		encodeError(w, internalServerError())
+		return
+	}
+
+	apiAppt := mapAppointmentToDoctorAppointment(appt, *pat.JSON200)
 	encode(w, http.StatusOK, apiAppt)
 }
 
@@ -189,9 +244,24 @@ func (s AppointmentServer) GetDoctorAppointments(
 		return
 	}
 
-	apiAppts := mapAppointmentsToDoctorAppointmentSlice(appts)
+	apiAppts := make([]api.DoctorAppointment, len(appts))
+	for i, appt := range appts {
+		pat, err := s.app.patClient.GetPatientByIdWithResponse(r.Context(), appt.PatientId)
+		if err != nil {
+			slog.ErrorContext(
+				r.Context(),
+				"Can't fetch pat",
+				"id",
+				appt.DoctorId,
+				"error",
+				err.Error(),
+			)
+			encodeError(w, internalServerError())
+			return
+		}
+		apiAppts[i] = mapAppointmentToDoctorAppointment(appt, *pat.JSON200)
+	}
 
-	// Filter by status if provided
 	if params.Status != nil {
 		filteredAppts := make([]api.DoctorAppointment, 0)
 		for _, appt := range apiAppts {
@@ -202,10 +272,8 @@ func (s AppointmentServer) GetDoctorAppointments(
 		apiAppts = filteredAppts
 	}
 
-	// Wrap in a structure expected by OpenAPI? The spec isn't provided,
-	// but often lists are wrapped e.g., {"appointments": [...]}.
-	// Assuming direct array response for now based on handler signature.
-	encode(w, http.StatusOK, apiAppts)
+	res := api.DoctorAppointmentsResponse{Appointments: apiAppts}
+	encode(w, http.StatusOK, res)
 }
 
 // GetPatientAppointmentById implements api.ServerInterface.
@@ -240,7 +308,21 @@ func (s AppointmentServer) GetPatientAppointmentById(
 		return
 	}
 
-	apiAppt := mapAppointmentToPatientAppointment(appt)
+	doc, err := s.app.docClient.GetDoctorByIdWithResponse(r.Context(), appt.DoctorId)
+	if err != nil {
+		slog.ErrorContext(
+			r.Context(),
+			"Can't fetch doc",
+			"id",
+			appt.DoctorId,
+			"error",
+			err.Error(),
+		)
+		encodeError(w, internalServerError())
+		return
+	}
+
+	apiAppt := mapAppointmentToPatientAppointment(appt, *doc.JSON200)
 	encode(w, http.StatusOK, apiAppt)
 }
 
@@ -257,11 +339,27 @@ func (s AppointmentServer) GetPatientAppointments(
 		return
 	}
 
-	apiAppts := mapAppointmentsToDoctorAppointmentSlice(appts)
+	apiAppts := make([]api.PatientAppointment, len(appts))
+	for i, appt := range appts {
+		doc, err := s.app.docClient.GetDoctorByIdWithResponse(r.Context(), appt.DoctorId)
+		if err != nil {
+			slog.ErrorContext(
+				r.Context(),
+				"Can't fetch doc",
+				"id",
+				appt.DoctorId,
+				"error",
+				err.Error(),
+			)
+			encodeError(w, internalServerError())
+			return
+		}
+		apiAppts[i] = mapAppointmentToPatientAppointment(appt, *doc.JSON200)
+	}
 
 	// Filter by status if provided
 	if params.Status != nil {
-		filteredAppts := make([]api.DoctorAppointment, 0)
+		filteredAppts := make([]api.PatientAppointment, 0)
 		for _, appt := range apiAppts {
 			if appt.Status == *params.Status {
 				filteredAppts = append(filteredAppts, appt)
@@ -270,9 +368,8 @@ func (s AppointmentServer) GetPatientAppointments(
 		apiAppts = filteredAppts
 	}
 
-	// Wrap in a structure expected by OpenAPI?
-	// Assuming direct array response for now.
-	encode(w, http.StatusOK, apiAppts)
+	res := api.PatientAppointmentsResponse{Appointments: apiAppts}
+	encode(w, http.StatusOK, res)
 }
 
 func handleAppError(w http.ResponseWriter, err error, resource string, id uuid.UUID) {

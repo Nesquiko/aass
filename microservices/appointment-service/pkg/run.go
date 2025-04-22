@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/Nesquiko/aass/appointment-service/api"
+	doctorapi "github.com/Nesquiko/aass/appointment-service/api/doctor-api"
+	patientapi "github.com/Nesquiko/aass/appointment-service/api/patient-api"
 	"github.com/Nesquiko/aass/common/server"
 )
 
@@ -24,7 +26,7 @@ func Run(ctx context.Context) error {
 		os.Exit(1)
 	}
 
-	httpLogger := server.SetupLogger("prescription-service", cfg.Log.Level)
+	httpLogger := server.SetupLogger("appointment-service", cfg.Log.Level)
 
 	loc, err := time.LoadLocation(cfg.App.Timezone)
 	if err != nil {
@@ -46,7 +48,9 @@ func Run(ctx context.Context) error {
 		os.Exit(1)
 	}
 
-	app := AppointmentApp{db: db}
+	doctorClient, _ := doctorapi.NewClientWithResponses("http://doctor-service:8080/")
+	patientClient, _ := patientapi.NewClientWithResponses("http://patient-service:8080/")
+	app := AppointmentApp{db: db, docClient: doctorClient, patClient: patientClient}
 	srv := NewServer(app, spec, httpLogger)
 
 	httpServer := &http.Server{

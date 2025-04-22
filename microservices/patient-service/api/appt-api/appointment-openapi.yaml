@@ -11,7 +11,6 @@ servers:
 tags:
   - name: Appointments
 paths:
-  # ... (other paths like /appointments, /appointments/{appointmentId}, /patients/... remain the same) ...
   /appointments:
     post:
       tags:
@@ -185,18 +184,8 @@ paths:
         - $ref: "#/components/parameters/queryStatus"
       responses:
         "200":
-          description: List of patient's appointments.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - appointments
-                properties:
-                  appointments:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/PatientAppointment"
+          # Use the reusable response component
+          $ref: "#/components/responses/PatientAppointmentsResponse"
         "404":
           description: Patient not found.
           content:
@@ -231,12 +220,12 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerErrorResponse"
 
-  /doctors/{doctorId}/appointments: # <<< MODIFIED PATH OPERATION
+  /doctors/{doctorId}/appointments:
     get:
       tags:
         - Appointments
-      summary: Get appointments for a doctor, optionally filtered by date or date range (Doctor View) # Updated summary
-      description: | # Updated description
+      summary: Get appointments for a doctor, optionally filtered by date or date range (Doctor View)
+      description: |
         Retrieves appointments scheduled for a specific doctor.
         Can be filtered by:
         - A specific `date` (YYYY-MM-DD).
@@ -244,27 +233,17 @@ paths:
         - Appointment `status`.
         If no date parameters (`date`, `from`, `to`) are provided, it may return all appointments or a default range based on implementation.
         Providing both `date` and `from`/`to` might result in an error or prioritize one over the other (API should define this behavior, e.g., prioritize `date`).
-      operationId: getDoctorAppointments # Renamed operationId
+      operationId: getDoctorAppointments
       parameters:
-        - $ref: "#/components/parameters/doctorId" # Path parameter
-        - $ref: "#/components/parameters/queryDate" # Optional single date filter
-        - $ref: "#/components/parameters/queryFrom" # Optional range start filter
-        - $ref: "#/components/parameters/queryTo" # Optional range end filter
-        - $ref: "#/components/parameters/queryStatus" # Optional status filter
+        - $ref: "#/components/parameters/doctorId"
+        - $ref: "#/components/parameters/queryDate"
+        - $ref: "#/components/parameters/queryFrom"
+        - $ref: "#/components/parameters/queryTo"
+        - $ref: "#/components/parameters/queryStatus"
       responses:
         "200":
-          description: Successfully retrieved appointments for the doctor, filtered as requested.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - appointments
-                properties:
-                  appointments:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/DoctorAppointment" # Returns doctor view
+          # Use the reusable response component
+          $ref: "#/components/responses/DoctorAppointmentsResponse"
         "400":
           description: Bad Request - Invalid parameter format (e.g., date) or conflicting parameters (e.g., providing both `date` and `from`/`to` if not supported).
           content:
@@ -330,7 +309,7 @@ paths:
 
 components:
   schemas:
-    # ... (All schemas remain the same as in the previous version) ...
+    # ... (All schemas remain the same) ...
     UserRole:
       type: string
       enum:
@@ -687,7 +666,7 @@ components:
     queryDate:
       name: date
       in: query
-      required: false # <<< Made optional
+      required: false
       description: Filter appointments for a specific date (YYYY-MM-DD format). Mutually exclusive with 'from'/'to'.
       schema:
         type: string
@@ -721,6 +700,33 @@ components:
       example: scheduled
 
   responses:
+    # --- Reusable Response Definitions ---
+    PatientAppointmentsResponse: # New component
+      description: List of patient's appointments.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - appointments
+            properties:
+              appointments:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatientAppointment"
+    DoctorAppointmentsResponse: # New component
+      description: Successfully retrieved appointments for the doctor, filtered as requested.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - appointments
+            properties:
+              appointments:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DoctorAppointment"
     InternalServerErrorResponse:
       description: An unexpected error occurred on the server.
       content:

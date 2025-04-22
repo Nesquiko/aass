@@ -291,8 +291,18 @@ type QueryStatus = AppointmentStatus
 // QueryTo defines model for queryTo.
 type QueryTo = openapi_types.Date
 
+// DoctorAppointmentsResponse defines model for DoctorAppointmentsResponse.
+type DoctorAppointmentsResponse struct {
+	Appointments []DoctorAppointment `json:"appointments"`
+}
+
 // InternalServerErrorResponse Standardized error details (RFC 9457).
 type InternalServerErrorResponse = ErrorDetail
+
+// PatientAppointmentsResponse defines model for PatientAppointmentsResponse.
+type PatientAppointmentsResponse struct {
+	Appointments []PatientAppointment `json:"appointments"`
+}
 
 // GetDoctorAppointmentsParams defines parameters for GetDoctorAppointments.
 type GetDoctorAppointmentsParams struct {
@@ -1348,11 +1358,9 @@ func (r GetDoctorAppointmentByIdResponse) StatusCode() int {
 }
 
 type GetDoctorAppointmentsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Appointments []DoctorAppointment `json:"appointments"`
-	}
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *DoctorAppointmentsResponse
 	ApplicationproblemJSON400 *ErrorDetail
 	ApplicationproblemJSON404 *ErrorDetail
 	ApplicationproblemJSON500 *InternalServerErrorResponse
@@ -1399,11 +1407,9 @@ func (r GetPatientAppointmentByIdResponse) StatusCode() int {
 }
 
 type GetPatientAppointmentsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Appointments []PatientAppointment `json:"appointments"`
-	}
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *PatientAppointmentsResponse
 	ApplicationproblemJSON404 *ErrorDetail
 	ApplicationproblemJSON500 *InternalServerErrorResponse
 }
@@ -1787,9 +1793,7 @@ func ParseGetDoctorAppointmentsResponse(rsp *http.Response) (*GetDoctorAppointme
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Appointments []DoctorAppointment `json:"appointments"`
-		}
+		var dest DoctorAppointmentsResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1876,9 +1880,7 @@ func ParseGetPatientAppointmentsResponse(rsp *http.Response) (*GetPatientAppoint
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Appointments []PatientAppointment `json:"appointments"`
-		}
+		var dest PatientAppointmentsResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
