@@ -74,7 +74,6 @@ func (a PatientApp) GetPatientCalendar(
 	from time.Time,
 	to time.Time,
 ) (api.PatientCalendarView, error) {
-	// 1. Verify patient exists (optional, but good practice)
 	_, err := a.db.FindPatientById(ctx, patientId)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {

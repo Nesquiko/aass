@@ -577,20 +577,17 @@ components:
           type: array
           description: List of facility IDs to reserve if accepting.
           items:
-            type: string
-            format: uuid
+            $ref: "#/components/schemas/Facility"
         equipment:
           type: array
           description: List of equipment IDs to reserve if accepting.
           items:
-            type: string
-            format: uuid
+            $ref: "#/components/schemas/Equipment"
         medicine:
           type: array
           description: List of medicine IDs to reserve if accepting.
           items:
-            type: string
-            format: uuid
+            $ref: "#/components/schemas/Medicine"
     AppointmentCancellation:
       type: object
       required:
