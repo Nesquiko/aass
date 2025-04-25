@@ -43,20 +43,15 @@ func Heartbeat() func(http.Handler) http.Handler {
 func OptionsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodOptions {
-			w.Header().Set("Access-Control-Allow-Origin", "*") // Or specific origins
+			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS")
 			w.Header().
 				Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID")
-				// Add any other headers your frontend sends
 			w.Header().
 				Set("Access-Control-Max-Age", "86400")
-				// Cache preflight response for 1 day
-			w.WriteHeader(
-				http.StatusNoContent,
-			) // 204 No Content is standard for OPTIONS
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
-		// If not an OPTIONS request, pass it down the middleware chain
 		next.ServeHTTP(w, r)
 	})
 }
