@@ -1,6 +1,6 @@
 get:
   tags:
-    - Prescriptions
+    - Medical History
   summary: Prescriptions in date range
   operationId: prescriptionsInDateRange
   parameters:

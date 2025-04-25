@@ -1,11 +1,4 @@
-import {
-  DoctorAppointment,
-  Equipment,
-  Facility,
-  instanceOfDoctorAppointment,
-  Medicine,
-  PatientAppointment,
-} from '../../../api/generated';
+import { Appointment, Equipment, Facility, Medicine } from '../../../api/generated';
 import { Component, h, Prop } from '@stencil/core';
 
 @Component({
@@ -14,7 +7,7 @@ import { Component, h, Prop } from '@stencil/core';
 })
 export class AppointmentResources {
   @Prop() isDoctor: boolean;
-  @Prop() appointment: PatientAppointment | DoctorAppointment;
+  @Prop() appointment: Appointment;
   @Prop() editingResources: boolean;
   @Prop() setEditingResources: (editingResources: boolean) => void;
 
@@ -56,8 +49,7 @@ export class AppointmentResources {
             Facility
           </div>
           <span class="font-medium text-gray-600">
-            {instanceOfDoctorAppointment(this.appointment) &&
-              (this.appointment.equipment?.[0].name ?? '')}
+            {this.appointment.equipment?.[0].name ?? ''}
           </span>
         </div>
         <div class="flex w-full flex-row items-center justify-between">
@@ -66,8 +58,7 @@ export class AppointmentResources {
             Equipment
           </div>
           <span class="font-medium text-gray-600">
-            {instanceOfDoctorAppointment(this.appointment) &&
-              (this.appointment.equipment?.[0].name ?? '')}
+            {this.appointment.equipment?.[0].name ?? ''}
           </span>
         </div>
         <div class="flex w-full flex-row items-center justify-between">
@@ -75,14 +66,10 @@ export class AppointmentResources {
             <md-icon style={{ fontSize: '16px' }}>vaccines</md-icon>
             Medicine
           </div>
-          <span class="font-medium text-gray-600">
-            {instanceOfDoctorAppointment(this.appointment) &&
-              (this.appointment.medicine?.[0].name ?? '')}
-          </span>
+          <span class="font-medium text-gray-600">{this.appointment.medicine?.[0].name ?? ''}</span>
         </div>
 
         {this.isDoctor &&
-          instanceOfDoctorAppointment(this.appointment) &&
           ['scheduled', 'requested'].includes(this.appointment.status) &&
           this.editingResources && (
             <div class="mt-3 w-full">

@@ -41,7 +41,7 @@ func (s Server) ConditionDetail(
 ) {
 	cond, err := s.app.ConditionById(r.Context(), conditionId)
 	if err != nil {
-		slog.Error(UnexpectedError, "error", err.Error(), "where", "GetAvailableResources")
+		slog.Error(UnexpectedError, "error", err.Error(), "where", "ConditionDetail")
 		encodeError(w, internalServerError())
 		return
 	}
@@ -160,7 +160,6 @@ func (s Server) GetDoctorById(w http.ResponseWriter, r *http.Request, doctorId a
 func (s Server) AppointmentById(
 	w http.ResponseWriter,
 	r *http.Request,
-	doctorId api.DoctorId,
 	appointmentId api.AppointmentId,
 ) {
 	appt, err := s.app.AppointmentById(r.Context(), appointmentId)
@@ -194,20 +193,6 @@ func (s Server) GetPatientById(w http.ResponseWriter, r *http.Request, patientId
 	}
 
 	encode(w, http.StatusOK, patient)
-}
-
-func (s Server) PatientsAppointment(
-	w http.ResponseWriter,
-	r *http.Request,
-	appointmentId api.AppointmentId,
-) {
-	appt, err := s.app.AppointmentById(r.Context(), appointmentId)
-	if err != nil {
-		slog.Error(UnexpectedError, "error", err.Error(), "where", "PatientsAppointment")
-		encodeError(w, internalServerError())
-		return
-	}
-	encode(w, http.StatusOK, appt)
 }
 
 // PatientsCalendar implements api.ServerInterface.

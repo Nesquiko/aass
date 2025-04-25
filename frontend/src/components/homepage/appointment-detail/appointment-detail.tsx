@@ -1,16 +1,13 @@
 import { Api } from '../../../api/api';
 import {
+  Appointment,
   AppointmentStatus,
   AvailableResources,
   Doctor,
-  DoctorAppointment,
   Equipment,
   Facility,
-  instanceOfDoctorAppointment,
-  instanceOfPatientAppointment,
   Medicine,
   NewPrescription,
-  PatientAppointment,
   Prescription,
   PrescriptionDisplay,
   TimeSlot,
@@ -39,68 +36,61 @@ export class AppointmentDetail {
   @Prop() handleResetSelection: () => void;
 
   @Prop() handleRescheduleAppointment: (
-    appointment: PatientAppointment | DoctorAppointment,
+    appointment: Appointment,
     newAppointmentDateTime: Date,
     newAppointmentDoctor: Doctor,
     reason: string,
   ) => Promise<void>;
   @Prop() handleCancelAppointment: (
-    appointment: PatientAppointment | DoctorAppointment,
+    appointment: Appointment,
     cancellationReason: string,
     by: UserRole,
   ) => Promise<void>;
 
   @Prop() handleAcceptAppointment: (
-    appointment: PatientAppointment | DoctorAppointment,
+    appointment: Appointment,
     resources: Partial<{
       facility: Facility;
       equipment: Equipment;
       medicine: Medicine;
     }>,
-  ) => Promise<DoctorAppointment | undefined>;
-  @Prop() handleDenyAppointment: (
-    appointment: PatientAppointment | DoctorAppointment,
-    denyReason: string,
-  ) => Promise<void>;
+  ) => Promise<Appointment | undefined>;
+  @Prop() handleDenyAppointment: (appointment: Appointment, denyReason: string) => Promise<void>;
   @Prop() handleSaveResourcesOnAppointment: (
-    appointment: PatientAppointment | DoctorAppointment,
+    appointment: Appointment,
     resources: Partial<{
       facility: Facility;
       equipment: Equipment;
       medicine: Medicine;
     }>,
-  ) => Promise<DoctorAppointment | undefined>;
+  ) => Promise<void>;
   @Prop() handleSelectPrescription: (prescription: PrescriptionDisplay) => void;
   @Prop() handleUpdatePrescriptionForAppointment: (
     prescriptionId: string,
     updatedPrescription: UpdatePrescription,
   ) => Promise<Prescription | undefined>;
   @Prop() handleAddPrescriptionForAppointment: (
-    appointment: DoctorAppointment,
+    appointment: Appointment,
     newPrescription: NewPrescription,
   ) => Promise<Prescription | undefined>;
   @Prop() handleDeletePrescriptionFromAppointment: (
-    appointment: DoctorAppointment,
     prescriptionToDelete: PrescriptionDisplay,
   ) => Promise<void>;
 
-  @State() appointment: PatientAppointment | DoctorAppointment = undefined;
+  @State() appointment: Appointment = undefined;
   @State() availableEquipment: Array<Equipment> = [];
   @State() availableFacilities: Array<Facility> = [];
   @State() availableMedicine: Array<Medicine> = [];
 
-  @State() selectedEquipment: Equipment | undefined =
-    this.appointment && instanceOfDoctorAppointment(this.appointment)
-      ? this.appointment.equipment[0]
-      : undefined;
-  @State() selectedFacility: Facility | undefined =
-    this.appointment && instanceOfDoctorAppointment(this.appointment)
-      ? this.appointment.facilities[0]
-      : undefined;
-  @State() selectedMedicine: Medicine | undefined =
-    this.appointment && instanceOfDoctorAppointment(this.appointment)
-      ? this.appointment.medicine[0]
-      : undefined;
+  @State() selectedEquipment: Equipment | undefined = this.appointment?.equipment
+    ? this.appointment.equipment?.[0]
+    : undefined;
+  @State() selectedFacility: Facility | undefined = this.appointment?.facilities
+    ? this.appointment.facilities?.[0]
+    : undefined;
+  @State() selectedMedicine: Medicine | undefined = this.appointment?.medicine
+    ? this.appointment.medicine?.[0]
+    : undefined;
 
   @State() prescriptionsExpanded: boolean = false;
 
@@ -144,21 +134,13 @@ export class AppointmentDetail {
 
   private async loadAppointment() {
     try {
-      if (this.isDoctor) {
-        const appointment: DoctorAppointment = await this.api.appointments.doctorsAppointment({
-          doctorId: this.user.id,
-          appointmentId: this.appointmentId,
-        });
-        this.appointment = appointment;
-        this.selectedEquipment = appointment.equipment?.[0] ?? undefined;
-        this.selectedFacility = appointment.facilities?.[0] ?? undefined;
-        this.selectedMedicine = appointment.medicine?.[0] ?? undefined;
-      } else {
-        this.appointment = await this.api.appointments.patientsAppointment({
-          patientId: this.user.id,
-          appointmentId: this.appointmentId,
-        });
-      }
+      const appointment = await this.api.appointments.appointmentById({
+        appointmentId: this.appointmentId,
+      });
+      this.appointment = appointment;
+      this.selectedEquipment = appointment.equipment?.[0] ?? undefined;
+      this.selectedFacility = appointment.facilities?.[0] ?? undefined;
+      this.selectedMedicine = appointment.medicine?.[0] ?? undefined;
     } catch (err) {
       toastService.showError(err.message);
     }
@@ -348,7 +330,7 @@ export class AppointmentDetail {
       facility: this.selectedFacility,
       equipment: this.selectedEquipment,
       medicine: this.selectedMedicine,
-    }).then((updatedAppointment: DoctorAppointment | undefined) => {
+    }).then((updatedAppointment: Appointment | undefined) => {
       if (!updatedAppointment) return;
       this.appointment = updatedAppointment;
     });
@@ -365,10 +347,6 @@ export class AppointmentDetail {
   };
 
   private handleSaveResources = () => {
-    if (!instanceOfDoctorAppointment(this.appointment)) {
-      throw new Error('Unexpected state, appointment is not DoctorAppointment');
-    }
-
     const newResources: Partial<{
       facility: Facility;
       equipment: Equipment;
@@ -379,20 +357,15 @@ export class AppointmentDetail {
       medicine: this.selectedMedicine,
     };
 
-    this.handleSaveResourcesOnAppointment(this.appointment, newResources).then(
-      (appointment: DoctorAppointment) => {
-        console.log('Saving resources on appt:', appointment);
-        if (!appointment) return;
-
-        this.appointment = {
-          ...this.appointment,
-          facilities: appointment.facilities,
-          equipment: appointment.equipment,
-          medicine: appointment.medicine,
-        };
-        this.editingResources = false;
-      },
-    );
+    this.handleSaveResourcesOnAppointment(this.appointment, newResources).then(() => {
+      this.appointment = {
+        ...this.appointment,
+        facilities: this.selectedFacility ? [this.selectedFacility] : undefined,
+        equipment: this.selectedEquipment ? [this.selectedEquipment] : undefined,
+        medicine: this.selectedMedicine ? [this.selectedMedicine] : undefined,
+      };
+      this.editingResources = false;
+    });
   };
 
   private handleAddPrescriptionNameChange = (event: Event) => {
@@ -442,10 +415,6 @@ export class AppointmentDetail {
   };
 
   private handleAddPrescription = () => {
-    if (!instanceOfDoctorAppointment(this.appointment)) {
-      throw new Error('unexpected state, appointment is not DoctorAppointment');
-    }
-
     const newPrescription: NewPrescription = {
       name: this.addingPrescriptionName,
       start: this.addingPrescriptionStart,
@@ -504,21 +473,15 @@ export class AppointmentDetail {
   };
 
   private handleDeletePrescription = () => {
-    if (!instanceOfDoctorAppointment(this.appointment)) {
-      throw new Error('Unexpected state, appointment is not DoctorAppointment');
-    }
-
-    this.handleDeletePrescriptionFromAppointment(this.appointment, this.deletingPrescription).then(
-      () => {
-        this.appointment = {
-          ...this.appointment,
-          prescriptions: this.appointment.prescriptions.filter(
-            (prescription: PrescriptionDisplay): boolean =>
-              prescription.id !== this.deletingPrescription.id,
-          ),
-        };
-      },
-    );
+    this.handleDeletePrescriptionFromAppointment(this.deletingPrescription).then(() => {
+      this.appointment = {
+        ...this.appointment,
+        prescriptions: this.appointment.prescriptions.filter(
+          (prescription: PrescriptionDisplay): boolean =>
+            prescription.id !== this.deletingPrescription.id,
+        ),
+      };
+    });
   };
 
   private cancelledByStatus = (): ' by doctor' | ' by patient' | undefined => {
@@ -574,7 +537,7 @@ export class AppointmentDetail {
             </span>
           </div>
 
-          {this.isDoctor && instanceOfDoctorAppointment(this.appointment) && (
+          {this.isDoctor && (
             <div class="mb-1 flex w-full flex-row items-center justify-between">
               <div class="flex flex-row items-center gap-x-2 text-gray-500">
                 <md-icon style={{ fontSize: '16px' }}>person</md-icon>
@@ -585,7 +548,7 @@ export class AppointmentDetail {
               </span>
             </div>
           )}
-          {!this.isDoctor && instanceOfPatientAppointment(this.appointment) && (
+          {!this.isDoctor && (
             <div class="mb-1 flex w-full flex-row items-center justify-between">
               <div class="flex flex-row items-center gap-x-2 text-gray-500">
                 <md-icon style={{ fontSize: '16px' }}>person</md-icon>
@@ -650,7 +613,7 @@ export class AppointmentDetail {
         )}
 
         {/* Appointment Resources */}
-        {this.isDoctor && instanceOfDoctorAppointment(this.appointment) && (
+        {this.isDoctor && (
           <xcastven-xkilian-project-appointment-resources
             isDoctor={this.isDoctor}
             appointment={this.appointment}

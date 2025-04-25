@@ -69,7 +69,11 @@ export class AppointmentScheduler {
 
   private async loadAciveConditions(date: Date, patientId: string) {
     try {
-      const conds = await this.api.conditions.conditionsInDate({ date, patientId });
+      const conds = await this.api.conditions.conditionsInDateRange({
+        from: date,
+        to: date,
+        patientId,
+      });
       this.activeConditions = conds.conditions;
     } catch (err) {
       toastService.showError(err.message);

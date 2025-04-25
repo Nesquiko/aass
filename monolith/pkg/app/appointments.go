@@ -44,7 +44,12 @@ func (a MonolithApp) CreateAppointment(
 		)
 	}
 
-	return dataApptToPatientAppt(appointment, doc, cond, prescriptions), nil
+	patient, err := a.db.PatientById(ctx, appointment.PatientId)
+	if err != nil {
+		return api.Appointment{}, fmt.Errorf("CreateAppointment find patient: %w", err)
+	}
+
+	return dataApptToPatientAppt(appointment, doc, patient, cond, prescriptions), nil
 }
 
 func (a MonolithApp) CancelAppointment(
@@ -113,9 +118,15 @@ func (a MonolithApp) AppointmentById(
 		)
 	}
 
+	doc, err := a.db.DoctorById(ctx, appointment.DoctorId)
+	if err != nil {
+		return api.Appointment{}, fmt.Errorf("DoctorsAppointmentById find doctor: %w", err)
+	}
+
 	return dataApptToDoctorAppt(
 		appointment,
 		patient,
+		doc,
 		cond,
 		facilities,
 		equipment,
@@ -200,9 +211,15 @@ func (a MonolithApp) DecideAppointment(
 		)
 	}
 
+	doc, err := a.db.DoctorById(ctx, appointment.DoctorId)
+	if err != nil {
+		return api.Appointment{}, fmt.Errorf("DecideAppointment find doctor: %w", err)
+	}
+
 	doctorAppointment := dataApptToDoctorAppt(
 		appointment,
 		patient,
+		doc,
 		cond,
 		facilities,
 		equipment,
@@ -288,5 +305,10 @@ func (a MonolithApp) RescheduleAppointment(
 		)
 	}
 
-	return dataApptToPatientAppt(appt, doc, cond, prescriptions), nil
+	patient, err := a.db.PatientById(ctx, appt.PatientId)
+	if err != nil {
+		return api.Appointment{}, fmt.Errorf("RescheduleAppointment find patient: %w", err)
+	}
+
+	return dataApptToPatientAppt(appt, doc, patient, cond, prescriptions), nil
 }

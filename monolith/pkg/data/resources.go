@@ -31,7 +31,7 @@ type Reservation struct {
 	Id            uuid.UUID    `bson:"_id"           json:"id"`
 	AppointmentId uuid.UUID    `bson:"appointmentId" json:"appointmentId"` // Link to the Appointment document
 	ResourceId    uuid.UUID    `bson:"resourceId"    json:"resourceId"`    // Link to the specific Resource document (Facility, Equipment, etc.)
-	ResourceName  string       `bson:"name"          json:"name"`
+	ResourceName  string       `bson:"resourceName"  json:"resourceName"`
 	ResourceType  ResourceType `bson:"resourceType"  json:"resourceType"`
 	StartTime     time.Time    `bson:"startTime"     json:"startTime"`
 	EndTime       time.Time    `bson:"endTime"       json:"endTime"`
@@ -137,7 +137,7 @@ func (m *MongoDb) CreateReservation(
 
 	// Define the fields to set on update or initial insert
 	updateFields := bson.M{
-		"resourceName": resourceName, // Update these fields regardless
+		"resourceName": resourceName,
 		"resourceType": resourceType,
 		"startTime":    startTime,
 		"endTime":      endTime,

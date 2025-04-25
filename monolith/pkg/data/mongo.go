@@ -59,20 +59,23 @@ func ConnectMongo(ctx context.Context, uri string, db string) (*MongoDb, error) 
 		return nil, fmt.Errorf("ConnectMongo: failed to ping mongo server: %w", err)
 	}
 
-	mongoDb := client.Database(db)
-	err = initCollections(ctx, mongoDb, Collections)
+	mongo := client.Database(db)
+	err = initCollections(ctx, mongo, Collections)
 	if err != nil {
 		_ = client.Disconnect(ctx)
 		return nil, fmt.Errorf("ConnectMongo: failed to init collections: %w", err)
 	}
 
-	err = initIndexes(ctx, mongoDb)
+	err = initIndexes(ctx, mongo)
 	if err != nil {
 		_ = client.Disconnect(ctx)
 		return nil, fmt.Errorf("ConnectMongo: failed to init indexes: %w", err)
 	}
 
-	return &MongoDb{Database: mongoDb}, nil
+	mongoDb := &MongoDb{Database: mongo}
+	err = seedResources(ctx, mongoDb)
+
+	return mongoDb, nil
 }
 
 func initCollections(ctx context.Context, mongoDb *mongo.Database, cols []string) error {
@@ -230,5 +233,57 @@ func uuidDecodeValue(dc bson.DecodeContext, vr bson.ValueReader, val reflect.Val
 		return err
 	}
 	val.Set(reflect.ValueOf(uuid2))
+	return nil
+}
+
+func seedResources(ctx context.Context, db *MongoDb) error {
+	facilities := []string{
+		"Operating Room 1",
+		"Consultation Room A",
+		"Radiology Suite",
+		"Physical Therapy Gym",
+		"Emergency Bay 3",
+	}
+
+	medicines := []string{
+		"Aspirin 100mg",
+		"Amoxicillin 500mg",
+		"Metformin 1000mg",
+		"Salbutamol Inhaler",
+		"Atorvastatin 20mg",
+	}
+
+	equipment := []string{
+		"MRI Scanner",
+		"X-Ray Machine",
+		"Ultrasound Device",
+		"Ventilator",
+		"ECG Monitor",
+	}
+
+	for _, name := range facilities {
+		_, err := db.CreateResource(ctx, name, ResourceTypeFacility)
+		if err != nil {
+			slog.Error("Failed to create facility", "name", name, "error", err)
+			return fmt.Errorf("failed to seed facility %q: %w", name, err)
+		}
+	}
+
+	for _, name := range medicines {
+		_, err := db.CreateResource(ctx, name, ResourceTypeMedicine)
+		if err != nil {
+			slog.Error("Failed to create medicine", "name", name, "error", err)
+			return fmt.Errorf("failed to seed medicine %q: %w", name, err)
+		}
+	}
+
+	for _, name := range equipment {
+		_, err := db.CreateResource(ctx, name, ResourceTypeEquipment)
+		if err != nil {
+			slog.Error("Failed to create equipment", "name", name, "error", err)
+			return fmt.Errorf("failed to seed equipment %q: %w", name, err)
+		}
+	}
+
 	return nil
 }

@@ -2,7 +2,7 @@ get:
   tags:
     - Appointments
   summary: Get appointment details
-  operationId: patientsAppointment
+  operationId: appointmentById
   parameters:
     - $ref: "../components/parameters/path/appointmentId.yaml"
   responses:

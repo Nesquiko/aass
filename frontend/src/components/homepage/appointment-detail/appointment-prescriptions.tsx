@@ -1,10 +1,4 @@
-import {
-  AppointmentStatus,
-  DoctorAppointment,
-  instanceOfDoctorAppointment,
-  PatientAppointment,
-  PrescriptionDisplay,
-} from '../../../api/generated';
+import { Appointment, AppointmentStatus, PrescriptionDisplay } from '../../../api/generated';
 import { renderDateSelects } from '../../../utils/utils';
 import { Component, h, Prop } from '@stencil/core';
 
@@ -14,7 +8,7 @@ import { Component, h, Prop } from '@stencil/core';
 })
 export class AppointmentPrescriptions {
   @Prop() isDoctor: boolean;
-  @Prop() appointment: PatientAppointment | DoctorAppointment;
+  @Prop() appointment: Appointment;
   @Prop() prescriptionsExpanded: boolean;
   @Prop() handleSelectPrescription: (prescription: PrescriptionDisplay) => void;
 
@@ -102,18 +96,17 @@ export class AppointmentPrescriptions {
           <div class="flex flex-row items-center gap-x-2 text-gray-500">
             <md-icon style={{ fontSize: '16px' }}>medication</md-icon>
             Prescriptions
-            {instanceOfDoctorAppointment(this.appointment) &&
-              (this.appointment.status === AppointmentStatus.Completed ||
-                this.appointment.status === AppointmentStatus.Scheduled) && (
-                <md-icon-button
-                  title="Add a prescription"
-                  class="ml-2"
-                  style={{ width: '24px', height: '24px' }}
-                  onClick={(event: Event) => this.toggleAddPrescriptionForm(event)}
-                >
-                  <md-icon style={{ fontSize: '16px' }}>add</md-icon>
-                </md-icon-button>
-              )}
+            {(this.appointment.status === AppointmentStatus.Completed ||
+              this.appointment.status === AppointmentStatus.Scheduled) && (
+              <md-icon-button
+                title="Add a prescription"
+                class="ml-2"
+                style={{ width: '24px', height: '24px' }}
+                onClick={(event: Event) => this.toggleAddPrescriptionForm(event)}
+              >
+                <md-icon style={{ fontSize: '16px' }}>add</md-icon>
+              </md-icon-button>
+            )}
           </div>
           {this.appointment.prescriptions && this.appointment.prescriptions.length > 0 && (
             <md-icon-button
@@ -149,32 +142,31 @@ export class AppointmentPrescriptions {
                   </md-icon>
                   {prescription.name}
                 </div>
-                {instanceOfDoctorAppointment(this.appointment) &&
-                  ['completed', 'scheduled'].includes(this.appointment.status) && (
-                    <div class="flex flex-row items-center gap-x-2">
-                      {/* Edit prescription */}
-                      <md-icon-button
-                        title="Edit prescription"
-                        onClick={(event: Event) =>
-                          this.toggleEditPrescriptionForm(event, prescription)
-                        }
-                        style={{ width: '24px', height: '24px' }}
-                      >
-                        <md-icon style={{ fontSize: '16px' }}>edit</md-icon>
-                      </md-icon-button>
+                {['completed', 'scheduled'].includes(this.appointment.status) && (
+                  <div class="flex flex-row items-center gap-x-2">
+                    {/* Edit prescription */}
+                    <md-icon-button
+                      title="Edit prescription"
+                      onClick={(event: Event) =>
+                        this.toggleEditPrescriptionForm(event, prescription)
+                      }
+                      style={{ width: '24px', height: '24px' }}
+                    >
+                      <md-icon style={{ fontSize: '16px' }}>edit</md-icon>
+                    </md-icon-button>
 
-                      {/* Delete prescription */}
-                      <md-icon-button
-                        title="Delete prescription"
-                        onClick={(event: Event) =>
-                          this.toggleDeletePrescriptionForm(event, prescription)
-                        }
-                        style={{ width: '24px', height: '24px' }}
-                      >
-                        <md-icon style={{ fontSize: '16px' }}>delete</md-icon>
-                      </md-icon-button>
-                    </div>
-                  )}
+                    {/* Delete prescription */}
+                    <md-icon-button
+                      title="Delete prescription"
+                      onClick={(event: Event) =>
+                        this.toggleDeletePrescriptionForm(event, prescription)
+                      }
+                      style={{ width: '24px', height: '24px' }}
+                    >
+                      <md-icon style={{ fontSize: '16px' }}>delete</md-icon>
+                    </md-icon-button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -189,170 +181,160 @@ export class AppointmentPrescriptions {
         )}
 
         {/* Add Prescription */}
-        {this.isDoctor &&
-          instanceOfDoctorAppointment(this.appointment) &&
-          this.addingPrescription && (
-            <div class="mt-3 w-full pt-3">
-              <h4 class="mb-2 w-full text-center font-medium text-[#7357be]">
-                Add a new prescription
-              </h4>
-              <div class="mb-3 flex w-full flex-col gap-y-3">
-                <div class="flex w-full flex-col gap-y-1">
-                  <label class="text-sm font-medium text-gray-600">Prescription name</label>
-                  <md-outlined-text-field
-                    required={true}
-                    label="Prescription name"
-                    class="w-full"
-                    value={this.addingPrescriptionName}
-                    onInput={(e: Event) => this.handleAddPrescriptionNameChange(e)}
-                  />
-                </div>
-
-                {renderDateSelects(
-                  'start',
-                  'Prescription start date',
-                  this.addingPrescriptionStart,
-                  this.handleAddPrescriptionDateChange,
-                )}
-
-                {renderDateSelects(
-                  'end',
-                  'Prescription end date',
-                  this.addingPrescriptionEnd,
-                  this.handleAddPrescriptionDateChange,
-                )}
-
-                <div class="flex w-full flex-col gap-y-1">
-                  <label class="text-sm font-medium text-gray-600">Doctor's note</label>
-                  <md-outlined-text-field
-                    type="textarea"
-                    rows={2}
-                    label="Doctor's note (optional)"
-                    class="w-full"
-                    value={this.addingPrescriptionDoctorsNote}
-                    onInput={(e: Event) => this.handleAddPrescriptionDoctorsNoteChange(e)}
-                  />
-                </div>
+        {this.isDoctor && this.addingPrescription && (
+          <div class="mt-3 w-full pt-3">
+            <h4 class="mb-2 w-full text-center font-medium text-[#7357be]">
+              Add a new prescription
+            </h4>
+            <div class="mb-3 flex w-full flex-col gap-y-3">
+              <div class="flex w-full flex-col gap-y-1">
+                <label class="text-sm font-medium text-gray-600">Prescription name</label>
+                <md-outlined-text-field
+                  required={true}
+                  label="Prescription name"
+                  class="w-full"
+                  value={this.addingPrescriptionName}
+                  onInput={(e: Event) => this.handleAddPrescriptionNameChange(e)}
+                />
               </div>
 
-              <div class="flex gap-x-2">
-                <md-filled-button
-                  class={`flex-1 rounded-full bg-[#7357be]`}
-                  disabled={
-                    !this.addingPrescriptionName ||
-                    !this.addingPrescriptionStart ||
-                    !this.addingPrescriptionEnd
-                  }
-                  onClick={this.handleAddPrescription}
-                >
-                  Add Prescription
-                </md-filled-button>
-                <md-outlined-button
-                  class="flex-1 rounded-full"
-                  onClick={() => this.setAddingPrescription(false)}
-                >
-                  Cancel
-                </md-outlined-button>
+              {renderDateSelects(
+                'start',
+                'Prescription start date',
+                this.addingPrescriptionStart,
+                this.handleAddPrescriptionDateChange,
+              )}
+
+              {renderDateSelects(
+                'end',
+                'Prescription end date',
+                this.addingPrescriptionEnd,
+                this.handleAddPrescriptionDateChange,
+              )}
+
+              <div class="flex w-full flex-col gap-y-1">
+                <label class="text-sm font-medium text-gray-600">Doctor's note</label>
+                <md-outlined-text-field
+                  type="textarea"
+                  rows={2}
+                  label="Doctor's note (optional)"
+                  class="w-full"
+                  value={this.addingPrescriptionDoctorsNote}
+                  onInput={(e: Event) => this.handleAddPrescriptionDoctorsNoteChange(e)}
+                />
               </div>
             </div>
-          )}
+
+            <div class="flex gap-x-2">
+              <md-filled-button
+                class={`flex-1 rounded-full bg-[#7357be]`}
+                disabled={
+                  !this.addingPrescriptionName ||
+                  !this.addingPrescriptionStart ||
+                  !this.addingPrescriptionEnd
+                }
+                onClick={this.handleAddPrescription}
+              >
+                Add Prescription
+              </md-filled-button>
+              <md-outlined-button
+                class="flex-1 rounded-full"
+                onClick={() => this.setAddingPrescription(false)}
+              >
+                Cancel
+              </md-outlined-button>
+            </div>
+          </div>
+        )}
 
         {/* Edit Prescription */}
-        {this.isDoctor &&
-          instanceOfDoctorAppointment(this.appointment) &&
-          this.editingPrescription && (
-            <div class="mt-3 w-full pt-3">
-              <h4 class="mb-2 w-full text-center font-medium text-[#7357be]">Edit prescription</h4>
-              <div class="mb-3 flex w-full flex-col gap-y-3">
-                <div class="flex w-full flex-col gap-y-1">
-                  <label class="text-sm font-medium text-gray-600">Prescription name</label>
-                  <md-outlined-text-field
-                    required={true}
-                    label="Prescription name"
-                    class="w-full"
-                    value={this.editingPrescriptionNewName}
-                    onInput={(e: Event) => this.handleUpdatePrescriptionNameChange(e)}
-                  />
-                </div>
-
-                {renderDateSelects(
-                  'start',
-                  'Prescription start date',
-                  this.editingPrescriptionNewStart,
-                  this.handleUpdatePrescriptionDateChange,
-                )}
-
-                {renderDateSelects(
-                  'end',
-                  'Prescription end date',
-                  this.editingPrescriptionNewEnd,
-                  this.handleUpdatePrescriptionDateChange,
-                )}
-                <div class="flex w-full flex-col gap-y-1">
-                  <label class="text-sm font-medium text-gray-600">
-                    Prescription doctor's note
-                  </label>
-                  <md-outlined-text-field
-                    type="textarea"
-                    rows={2}
-                    label="Doctor's note (optional)"
-                    class="w-full"
-                    value={this.editingPrescriptionNewDoctorsNote}
-                    onInput={(e: Event) => this.handleUpdatePrescriptionDoctorsNoteChange(e)}
-                  />
-                </div>
+        {this.isDoctor && this.editingPrescription && (
+          <div class="mt-3 w-full pt-3">
+            <h4 class="mb-2 w-full text-center font-medium text-[#7357be]">Edit prescription</h4>
+            <div class="mb-3 flex w-full flex-col gap-y-3">
+              <div class="flex w-full flex-col gap-y-1">
+                <label class="text-sm font-medium text-gray-600">Prescription name</label>
+                <md-outlined-text-field
+                  required={true}
+                  label="Prescription name"
+                  class="w-full"
+                  value={this.editingPrescriptionNewName}
+                  onInput={(e: Event) => this.handleUpdatePrescriptionNameChange(e)}
+                />
               </div>
 
-              <div class="flex gap-x-2">
-                <md-filled-button
-                  class={`flex-1 rounded-full bg-[#7357be]`}
-                  disabled={
-                    !this.editingPrescriptionNewName ||
-                    !this.editingPrescriptionNewStart ||
-                    !this.editingPrescriptionNewEnd
-                  }
-                  onClick={this.handleUpdatePrescription}
-                >
-                  Save Changes
-                </md-filled-button>
-                <md-outlined-button
-                  class="flex-1 rounded-full"
-                  onClick={() => this.setEditingPrescription(null)}
-                >
-                  Cancel
-                </md-outlined-button>
+              {renderDateSelects(
+                'start',
+                'Prescription start date',
+                this.editingPrescriptionNewStart,
+                this.handleUpdatePrescriptionDateChange,
+              )}
+
+              {renderDateSelects(
+                'end',
+                'Prescription end date',
+                this.editingPrescriptionNewEnd,
+                this.handleUpdatePrescriptionDateChange,
+              )}
+              <div class="flex w-full flex-col gap-y-1">
+                <label class="text-sm font-medium text-gray-600">Prescription doctor's note</label>
+                <md-outlined-text-field
+                  type="textarea"
+                  rows={2}
+                  label="Doctor's note (optional)"
+                  class="w-full"
+                  value={this.editingPrescriptionNewDoctorsNote}
+                  onInput={(e: Event) => this.handleUpdatePrescriptionDoctorsNoteChange(e)}
+                />
               </div>
             </div>
-          )}
+
+            <div class="flex gap-x-2">
+              <md-filled-button
+                class={`flex-1 rounded-full bg-[#7357be]`}
+                disabled={
+                  !this.editingPrescriptionNewName ||
+                  !this.editingPrescriptionNewStart ||
+                  !this.editingPrescriptionNewEnd
+                }
+                onClick={this.handleUpdatePrescription}
+              >
+                Save Changes
+              </md-filled-button>
+              <md-outlined-button
+                class="flex-1 rounded-full"
+                onClick={() => this.setEditingPrescription(null)}
+              >
+                Cancel
+              </md-outlined-button>
+            </div>
+          </div>
+        )}
 
         {/* Delete Prescription */}
-        {this.isDoctor &&
-          instanceOfDoctorAppointment(this.appointment) &&
-          this.deletingPrescription && (
-            <div class="mt-3 w-full pt-3">
-              <h4 class="mb-2 w-full text-center font-medium text-[#7357be]">
-                Delete prescription
-              </h4>
-              <p class="mb-3 w-full text-center text-sm text-gray-600">
-                Are you sure you want to delete this prescription?
-              </p>
+        {this.isDoctor && this.deletingPrescription && (
+          <div class="mt-3 w-full pt-3">
+            <h4 class="mb-2 w-full text-center font-medium text-[#7357be]">Delete prescription</h4>
+            <p class="mb-3 w-full text-center text-sm text-gray-600">
+              Are you sure you want to delete this prescription?
+            </p>
 
-              <div class="flex gap-x-2">
-                <md-filled-button
-                  class={`flex-1 rounded-full bg-[#7357be]`}
-                  onClick={this.handleDeletePrescription}
-                >
-                  Confirm delete
-                </md-filled-button>
-                <md-outlined-button
-                  class="flex-1 rounded-full"
-                  onClick={() => this.setDeletingPrescription(null)}
-                >
-                  Cancel
-                </md-outlined-button>
-              </div>
+            <div class="flex gap-x-2">
+              <md-filled-button
+                class={`flex-1 rounded-full bg-[#7357be]`}
+                onClick={this.handleDeletePrescription}
+              >
+                Confirm delete
+              </md-filled-button>
+              <md-outlined-button
+                class="flex-1 rounded-full"
+                onClick={() => this.setDeletingPrescription(null)}
+              >
+                Cancel
+              </md-outlined-button>
             </div>
-          )}
+          </div>
+        )}
       </div>
     );
   }

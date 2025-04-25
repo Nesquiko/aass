@@ -1,10 +1,9 @@
 import {
+  Appointment,
   AppointmentStatus,
-  DoctorAppointment,
   Equipment,
   Facility,
   Medicine,
-  PatientAppointment,
 } from '../../../api/generated';
 import { Component, h, Prop } from '@stencil/core';
 
@@ -14,19 +13,17 @@ import { Component, h, Prop } from '@stencil/core';
 })
 export class AppointmentActions {
   @Prop() isDoctor: boolean;
-  @Prop() appointment: PatientAppointment | DoctorAppointment;
-  @Prop() handleCancelDoctorAppointment: (
-    appointment: PatientAppointment | DoctorAppointment,
-  ) => void;
-  @Prop() handleAcceptAppointment: (appointment: PatientAppointment | DoctorAppointment) => void;
-  @Prop() handleDenyAppointment: (appointment: PatientAppointment | DoctorAppointment) => void;
+  @Prop() appointment: Appointment;
+  @Prop() handleCancelDoctorAppointment: (appointment: Appointment) => void;
+  @Prop() handleAcceptAppointment: (appointment: Appointment) => void;
+  @Prop() handleDenyAppointment: (appointment: Appointment) => void;
   @Prop() handleRescheduleAppointment: () => void;
-  @Prop() handleCancelPatientAppointment: (appointment: PatientAppointment) => void;
+  @Prop() handleCancelPatientAppointment: (appointment: Appointment) => void;
 
   private patientButton = (
     displayTitle: string,
     widthClass: string,
-    onClick: (appointment: PatientAppointment) => void,
+    onClick: (appointment: Appointment) => void,
   ) => {
     return (
       <md-filled-button class={`${widthClass} rounded-full bg-[#7357be]`} onClick={onClick}>
@@ -38,7 +35,7 @@ export class AppointmentActions {
   private getPatientAppointmentActions = (
     appointmentStatus: AppointmentStatus,
     handleRescheduleAppointment: () => void,
-    handleCancelAppointment: (appointment: PatientAppointment) => void,
+    handleCancelAppointment: (appointment: Appointment) => void,
   ) => {
     switch (appointmentStatus) {
       case 'scheduled':
@@ -63,7 +60,7 @@ export class AppointmentActions {
     displayTitle: string,
     widthClass: string,
     onClick: (
-      appointment: PatientAppointment | DoctorAppointment,
+      appointment: Appointment,
       resources?: {
         facilities: Array<Facility>;
         equipment: Array<Equipment>;
@@ -80,9 +77,9 @@ export class AppointmentActions {
 
   private getDoctorAppointmentActions = (
     appointmentStatus: AppointmentStatus,
-    handleCancelAppointment: (appointment: PatientAppointment | DoctorAppointment) => void,
-    handleAcceptAppointment: (appointment: PatientAppointment | DoctorAppointment) => void,
-    handleDenyAppointment: (appointment: PatientAppointment | DoctorAppointment) => void,
+    handleCancelAppointment: (appointment: Appointment) => void,
+    handleAcceptAppointment: (appointment: Appointment) => void,
+    handleDenyAppointment: (appointment: Appointment) => void,
   ) => {
     switch (appointmentStatus) {
       case 'scheduled':

@@ -171,6 +171,7 @@ func dataApptToApptDisplay(
 func dataApptToPatientAppt(
 	a data.Appointment,
 	d data.Doctor,
+	p data.Patient,
 	c *data.Condition,
 	prescriptions []data.Prescription,
 ) api.Appointment {
@@ -184,6 +185,7 @@ func dataApptToPatientAppt(
 		CancellationReason:  a.CancellationReason,
 		CanceledBy:          (*api.UserRole)(a.CancelledBy),
 		DenialReason:        a.DenialReason,
+		Patient:             dataPatientToApiPatient(p),
 	}
 
 	if c != nil {
@@ -199,6 +201,7 @@ func dataApptToPatientAppt(
 func dataApptToDoctorAppt(
 	appt data.Appointment,
 	patient data.Patient,
+	doctor data.Doctor,
 	cond *data.Condition,
 	facilities []data.Resource,
 	equipment []data.Resource,
@@ -215,6 +218,8 @@ func dataApptToDoctorAppt(
 		Status:              api.AppointmentStatus(appt.Status),
 		Type:                api.AppointmentType(appt.Type),
 		DenialReason:        appt.DenialReason,
+		Condition:           &api.ConditionDisplay{},
+		Doctor:              dataDoctorToApiDoctor(doctor),
 	}
 
 	if cond != nil {

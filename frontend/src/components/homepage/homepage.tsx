@@ -1,18 +1,15 @@
 import { Api } from '../../api/api';
 import {
+  Appointment,
   AppointmentDisplay,
   AppointmentStatus,
   Condition,
   ConditionDisplay,
   Doctor,
-  DoctorAppointment,
-  DoctorCalendar,
   Equipment,
   Facility,
   Medicine,
   NewPrescription,
-  PatientAppointment,
-  PatientsCalendar,
   Prescription,
   PrescriptionDisplay,
   UpdatePrescription,
@@ -67,21 +64,33 @@ export class Homepage {
 
     try {
       if (this.isDoctor) {
-        const calendar: DoctorCalendar = await this.api.doctors.doctorsCalendar({
+        const appts = await this.api.doctors.doctorsCalendar({
           doctorId: this.user.id,
           from: fromDate,
           to: toDate,
         });
-        this.appointments = calendar.appointments ?? [];
+        this.appointments = appts.appointments ?? [];
       } else {
-        const calendar: PatientsCalendar = await this.api.patients.patientsCalendar({
+        const appts = await this.api.patients.patientsCalendar({
           patientId: this.user.id,
           from: fromDate,
           to: toDate,
         });
-        this.appointments = calendar.appointments ?? [];
-        this.conditions = calendar.conditions ?? [];
-        this.prescriptions = calendar.prescriptions ?? [];
+        this.appointments = appts.appointments ?? [];
+
+        const conds = await this.api.conditions.conditionsInDateRange({
+          patientId: this.user.id,
+          from: fromDate,
+          to: toDate,
+        });
+        this.conditions = conds.conditions ?? [];
+
+        const prescs = await this.api.medicalHistory.prescriptionsInDateRange({
+          patientId: this.user.id,
+          from: fromDate,
+          to: toDate,
+        });
+        this.prescriptions = prescs.prescriptions ?? [];
       }
     } catch (err) {
       toastService.showError(err.message);
@@ -122,7 +131,7 @@ export class Homepage {
   };
 
   private handleRescheduleAppointment = async (
-    appointment: PatientAppointment | DoctorAppointment,
+    appointment: Appointment,
     newAppointmentDateTime: Date,
     newAppointmentDoctor: Doctor,
     reason: string,
@@ -152,7 +161,7 @@ export class Homepage {
   };
 
   private handleCancelAppointment = async (
-    appointment: PatientAppointment | DoctorAppointment,
+    appointment: Appointment,
     cancellationReason: string,
     by: UserRole,
   ) => {
@@ -167,13 +176,13 @@ export class Homepage {
   };
 
   private handleAcceptAppointment = async (
-    appointment: PatientAppointment | DoctorAppointment,
+    appointment: Appointment,
     resources: Partial<{
       facility: Facility;
       equipment: Equipment;
       medicine: Medicine;
     }>,
-  ): Promise<DoctorAppointment | undefined> => {
+  ): Promise<Appointment | undefined> => {
     try {
       return await this.api.appointments.decideAppointment({
         appointmentId: appointment.id,
@@ -189,10 +198,7 @@ export class Homepage {
     }
   };
 
-  private handleDenyAppointment = async (
-    appointment: PatientAppointment | DoctorAppointment,
-    denyReason: string,
-  ) => {
+  private handleDenyAppointment = async (appointment: Appointment, denyReason: string) => {
     try {
       await this.api.appointments.decideAppointment({
         appointmentId: appointment.id,
@@ -204,21 +210,21 @@ export class Homepage {
   };
 
   private handleSaveResourcesOnAppointment = async (
-    appointment: PatientAppointment | DoctorAppointment,
+    appointment: Appointment,
     resources: Partial<{
       facility: Facility;
       equipment: Equipment;
       medicine: Medicine;
     }>,
-  ): Promise<DoctorAppointment | undefined> => {
+  ): Promise<void> => {
     try {
-      return this.api.resources.reserveAppointmentResources({
+      await this.api.resources.reserveAppointmentResources({
         appointmentId: appointment.id,
         reserveAppointmentResourcesRequest: {
           start: appointment.appointmentDateTime,
           facilityId: resources.facility?.id,
-          equipment: resources.equipment?.id,
-          medicine: resources.medicine?.id,
+          equipmentId: resources.equipment?.id,
+          medicineId: resources.medicine?.id,
         },
       });
     } catch (err) {
@@ -242,7 +248,7 @@ export class Homepage {
   };
 
   private handleAddPrescriptionForAppointment = async (
-    appointment: DoctorAppointment,
+    appointment: Appointment,
     newPrescription: NewPrescription,
   ): Promise<Prescription | undefined> => {
     try {
@@ -263,7 +269,6 @@ export class Homepage {
   };
 
   private handleDeletePrescriptionFromAppointment = async (
-    _appointment: DoctorAppointment,
     prescriptionToDelete: PrescriptionDisplay,
   ): Promise<void> => {
     try {

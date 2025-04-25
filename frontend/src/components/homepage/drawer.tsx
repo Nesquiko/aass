@@ -1,16 +1,15 @@
 import { Api } from '../../api/api';
 import {
+  Appointment,
   AppointmentDisplay,
   AppointmentStatus,
   Condition,
   ConditionDisplay,
   Doctor,
-  DoctorAppointment,
   Equipment,
   Facility,
   Medicine,
   NewPrescription,
-  PatientAppointment,
   Prescription,
   PrescriptionDisplay,
   UpdatePrescription,
@@ -56,47 +55,43 @@ export class Drawer {
   @Prop() handleSelectPrescription: (prescription: PrescriptionDisplay) => void;
 
   @Prop() handleRescheduleAppointment: (
-    appointment: PatientAppointment | DoctorAppointment,
+    appointment: Appointment,
     newAppointmentDateTime: Date,
     newAppointmentDoctor: Doctor,
     reason: string,
   ) => Promise<void>;
   @Prop() handleCancelAppointment: (
-    appointment: PatientAppointment | DoctorAppointment,
+    appointment: Appointment,
     cancellationReason: string,
     by: UserRole,
   ) => Promise<void>;
 
   @Prop() handleAcceptAppointment: (
-    appointment: PatientAppointment | DoctorAppointment,
+    appointment: Appointment,
     resources: Partial<{
       facility: Facility;
       equipment: Equipment;
       medicine: Medicine;
     }>,
-  ) => Promise<DoctorAppointment | undefined>;
-  @Prop() handleDenyAppointment: (
-    appointment: PatientAppointment | DoctorAppointment,
-    denyReason: string,
-  ) => Promise<void>;
+  ) => Promise<Appointment | undefined>;
+  @Prop() handleDenyAppointment: (appointment: Appointment, denyReason: string) => Promise<void>;
   @Prop() handleSaveResourcesOnAppointment: (
-    appointment: PatientAppointment | DoctorAppointment,
+    appointment: Appointment,
     resources: Partial<{
       facility: Facility;
       equipment: Equipment;
       medicine: Medicine;
     }>,
-  ) => Promise<DoctorAppointment | undefined>;
+  ) => Promise<void>;
   @Prop() handleUpdatePrescriptionForAppointment: (
     prescriptionId: string,
     updatedPrescription: UpdatePrescription,
   ) => Promise<Prescription | undefined>;
   @Prop() handleAddPrescriptionForAppointment: (
-    appointment: DoctorAppointment,
+    appointment: Appointment,
     newPrescription: NewPrescription,
   ) => Promise<Prescription | undefined>;
   @Prop() handleDeletePrescriptionFromAppointment: (
-    appointment: DoctorAppointment,
     prescriptionToDelete: PrescriptionDisplay,
   ) => Promise<void>;
 
