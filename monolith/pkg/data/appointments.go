@@ -164,8 +164,17 @@ func (m *MongoDb) DecideAppointment(
 	}
 
 	if decision == "accept" {
-		for _, resource := range resources {
-			_, err := m.CreateReservation(
+		for _, res := range resources {
+			resource, err := m.ResourceById(ctx, res.Id)
+			if err != nil {
+				return Appointment{}, fmt.Errorf(
+					"DecideAppointment failed to fetch resource %s: %w",
+					resource.Id,
+					err,
+				)
+			}
+
+			_, err = m.CreateReservation(
 				ctx,
 				appointmentId,
 				resource.Id,

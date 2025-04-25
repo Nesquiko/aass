@@ -169,32 +169,23 @@ func (a monolithApp) DecideAppointment(
 	decision api.AppointmentDecision,
 ) (api.DoctorAppointment, error) {
 	var resources []data.Resource
-	if decision.Facilities != nil {
-		for _, facility := range *decision.Facilities {
-			resources = append(resources, data.Resource{
-				Id:   facility.Id,
-				Name: facility.Name,
-				Type: data.ResourceTypeFacility,
-			})
-		}
+	if decision.Facility != nil {
+		resources = append(resources, data.Resource{
+			Id:   *decision.Facility,
+			Type: data.ResourceTypeFacility,
+		})
 	}
 	if decision.Equipment != nil {
-		for _, equipment := range *decision.Equipment {
-			resources = append(resources, data.Resource{
-				Id:   equipment.Id,
-				Name: equipment.Name,
-				Type: data.ResourceTypeEquipment,
-			})
-		}
+		resources = append(resources, data.Resource{
+			Id:   *decision.Equipment,
+			Type: data.ResourceTypeEquipment,
+		})
 	}
 	if decision.Medicine != nil {
-		for _, medicine := range *decision.Medicine {
-			resources = append(resources, data.Resource{
-				Id:   medicine.Id,
-				Name: medicine.Name,
-				Type: data.ResourceTypeMedicine,
-			})
-		}
+		resources = append(resources, data.Resource{
+			Id:   *decision.Medicine,
+			Type: data.ResourceTypeMedicine,
+		})
 	}
 
 	appointment, err := a.db.DecideAppointment(

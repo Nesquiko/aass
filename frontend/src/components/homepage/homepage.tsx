@@ -179,9 +179,9 @@ export class Homepage {
         appointmentId: appointment.id,
         appointmentDecision: {
           action: 'accept',
-          medicine: resources.medicine ? [resources.medicine] : undefined,
-          facilities: resources.facility ? [resources.facility] : undefined,
-          equipment: resources.equipment ? [resources.equipment] : undefined,
+          medicine: resources.medicine ? resources.medicine.id : undefined,
+          facility: resources.facility ? resources.facility.id : undefined,
+          equipment: resources.equipment ? resources.equipment.id : undefined,
         },
       });
     } catch (err) {

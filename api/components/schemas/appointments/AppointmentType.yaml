@@ -2,3 +2,11 @@ type: string
 description: The type of the appointment.
 enum:
   - regular_check
+  - new_patient
+  - follow_up
+  - annual_physical
+  - consultation
+  - vaccination
+  - urgent_care
+  - procedure
+  - specialist_visit
