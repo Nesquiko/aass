@@ -27,7 +27,7 @@ const (
 )
 
 type Server struct {
-	app app.App
+	app app.MonolithApp
 }
 
 type ApiError struct {
@@ -38,7 +38,11 @@ func (e *ApiError) Error() string {
 	return fmt.Sprintf("error %q, status %d", e.Title, e.Status)
 }
 
-func NewServer(app app.App, spec *openapi3.T, middlewareLogger *httplog.Logger) http.Handler {
+func NewServer(
+	app app.MonolithApp,
+	spec *openapi3.T,
+	middlewareLogger *httplog.Logger,
+) http.Handler {
 	r := chi.NewMux()
 	r.Use(heartbeat())
 	r.Use(optionsMiddleware)

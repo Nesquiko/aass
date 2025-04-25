@@ -12,7 +12,7 @@ import (
 	"github.com/Nesquiko/wac/pkg/data"
 )
 
-func (a monolithApp) CreatePatientCondition(
+func (a MonolithApp) CreatePatientCondition(
 	ctx context.Context,
 	c api.NewCondition,
 ) (api.ConditionDisplay, error) {
@@ -23,7 +23,7 @@ func (a monolithApp) CreatePatientCondition(
 	return dataCondToCondDisplay(cond), nil
 }
 
-func (a monolithApp) ConditionById(ctx context.Context, id uuid.UUID) (api.Condition, error) {
+func (a MonolithApp) ConditionById(ctx context.Context, id uuid.UUID) (api.Condition, error) {
 	cond, err := a.db.ConditionById(ctx, id)
 	if err != nil {
 		return api.Condition{}, fmt.Errorf("ConditionById: %w", err)
@@ -51,7 +51,7 @@ func (a monolithApp) ConditionById(ctx context.Context, id uuid.UUID) (api.Condi
 	return dataCondToCond(cond, appointments), nil
 }
 
-func (a monolithApp) UpdatePatientCondition(
+func (a MonolithApp) UpdatePatientCondition(
 	ctx context.Context,
 	conditionId uuid.UUID,
 	updateData api.UpdateCondition,
@@ -159,12 +159,13 @@ func (a monolithApp) UpdatePatientCondition(
 	return apiResponse, nil
 }
 
-func (a monolithApp) PatientConditionsOnDate(
+func (a MonolithApp) PatientConditionsOnDate(
 	ctx context.Context,
 	patientId uuid.UUID,
-	date time.Time,
+	from time.Time,
+	to *time.Time,
 ) ([]api.ConditionDisplay, error) {
-	dataConditions, err := a.db.FindConditionsByPatientIdAndDate(ctx, patientId, date)
+	dataConditions, err := a.db.FindConditionsByPatientId(ctx, patientId, from, to)
 	if err != nil {
 		return nil, fmt.Errorf("PatientConditionsOnDate failed: %w", err)
 	}

@@ -17,8 +17,6 @@ type MongoDb struct {
 	*mongo.Database
 }
 
-var _ Db = (*MongoDb)(nil)
-
 const (
 	patientsCollection      = "patients"
 	doctorsCollection       = "doctors"

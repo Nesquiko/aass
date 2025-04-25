@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/Nesquiko/wac/pkg/data"
 )
 
-func (a monolithApp) CreatePatientPrescription(
+func (a MonolithApp) CreatePatientPrescription(
 	ctx context.Context,
 	pres api.NewPrescription,
 ) (api.Prescription, error) {
@@ -45,7 +46,7 @@ func (a monolithApp) CreatePatientPrescription(
 	return dataPrescToPresc(prescription, appt, patient, doctor), nil
 }
 
-func (a monolithApp) UpdatePatientPrescription(
+func (a MonolithApp) UpdatePatientPrescription(
 	ctx context.Context,
 	prescriptionId uuid.UUID,
 	updateData api.UpdatePrescription,
@@ -158,7 +159,7 @@ func (a monolithApp) UpdatePatientPrescription(
 	return dataPrescToPresc(updatedDbPrescription, apptData, &patientData, doctorData), nil
 }
 
-func (a monolithApp) PrescriptionById(
+func (a MonolithApp) PrescriptionById(
 	ctx context.Context,
 	prescriptionId uuid.UUID,
 ) (api.Prescription, error) {
@@ -225,7 +226,7 @@ func (a monolithApp) PrescriptionById(
 	return dataPrescToPresc(prescription, apptData, &patient, doctorData), nil
 }
 
-func (a monolithApp) DeletePrescription(ctx context.Context, id uuid.UUID) error {
+func (a MonolithApp) DeletePrescription(ctx context.Context, id uuid.UUID) error {
 	err := a.db.DeletePrescription(ctx, id)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
@@ -239,4 +240,19 @@ func (a monolithApp) DeletePrescription(ctx context.Context, id uuid.UUID) error
 	}
 
 	return nil
+}
+
+func (a MonolithApp) PatientPrescriptionsInDateRange(
+	ctx context.Context,
+	patientId uuid.UUID,
+	from time.Time,
+	to *time.Time,
+) ([]api.PrescriptionDisplay, error) {
+	dataPresc, err := a.db.FindPrescriptionsByPatientId(ctx, patientId, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("PatientPrescriptionsInDateRange failed: %w", err)
+	}
+
+	apiConditions := Map(dataPresc, dataPrescToPrescDisplay)
+	return apiConditions, nil
 }

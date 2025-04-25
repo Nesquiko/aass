@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/Nesquiko/wac/pkg/api"
 	"github.com/Nesquiko/wac/pkg/app"
@@ -156,16 +157,15 @@ func (s Server) GetDoctorById(w http.ResponseWriter, r *http.Request, doctorId a
 	encode(w, http.StatusOK, doctor)
 }
 
-// DoctorsAppointment implements api.ServerInterface.
-func (s Server) DoctorsAppointment(
+func (s Server) AppointmentById(
 	w http.ResponseWriter,
 	r *http.Request,
 	doctorId api.DoctorId,
 	appointmentId api.AppointmentId,
 ) {
-	appt, err := s.app.DoctorsAppointmentById(r.Context(), doctorId, appointmentId)
+	appt, err := s.app.AppointmentById(r.Context(), appointmentId)
 	if err != nil {
-		slog.Error(UnexpectedError, "error", err.Error(), "where", "DoctorsAppointment")
+		slog.Error(UnexpectedError, "error", err.Error(), "where", "AppointmentById")
 		encodeError(w, internalServerError())
 		return
 	}
@@ -196,14 +196,12 @@ func (s Server) GetPatientById(w http.ResponseWriter, r *http.Request, patientId
 	encode(w, http.StatusOK, patient)
 }
 
-// PatientsAppointment implements api.ServerInterface.
 func (s Server) PatientsAppointment(
 	w http.ResponseWriter,
 	r *http.Request,
-	patientId api.PatientId,
 	appointmentId api.AppointmentId,
 ) {
-	appt, err := s.app.PatientsAppointmentById(r.Context(), patientId, appointmentId)
+	appt, err := s.app.AppointmentById(r.Context(), appointmentId)
 	if err != nil {
 		slog.Error(UnexpectedError, "error", err.Error(), "where", "PatientsAppointment")
 		encodeError(w, internalServerError())
@@ -227,28 +225,6 @@ func (s Server) PatientsCalendar(
 	}
 
 	encode(w, http.StatusOK, calendar)
-}
-
-// PatientsMedicalHistoryFiles implements api.ServerInterface.
-func (s Server) PatientsMedicalHistoryFiles(
-	w http.ResponseWriter,
-	r *http.Request,
-	patientId api.PatientId,
-	params api.PatientsMedicalHistoryFilesParams,
-) {
-	files, err := s.app.PatientMedicalHistoryFiles(
-		r.Context(),
-		patientId,
-		params.Page,
-		params.PageSize,
-	)
-	if err != nil {
-		slog.Error(UnexpectedError, "error", err.Error(), "where", "PatientMedicalHistoryFiles")
-		encodeError(w, internalServerError())
-		return
-	}
-
-	encode(w, http.StatusOK, files)
 }
 
 // RescheduleAppointment implements api.ServerInterface.
@@ -357,48 +333,6 @@ func (s Server) CreateResource(w http.ResponseWriter, r *http.Request) {
 	encode(w, http.StatusCreated, resource)
 }
 
-// ReserveResource implements api.ServerInterface.
-func (s Server) ReserveResource(w http.ResponseWriter, r *http.Request, resourceId api.ResourceId) {
-	req, decodeErr := Decode[api.ResourceReservation](w, r)
-	if decodeErr != nil {
-		encodeError(w, decodeErr)
-		return
-	}
-
-	err := s.app.ReserveResource(r.Context(), resourceId, req)
-	if err != nil {
-		slog.Error(UnexpectedError, "error", err.Error(), "where", "ReserveResource")
-		encodeError(w, internalServerError())
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-// AvailableDoctors implements api.ServerInterface.
-func (s Server) AvailableDoctors(
-	w http.ResponseWriter,
-	r *http.Request,
-	params api.AvailableDoctorsParams,
-) {
-	doctors, err := s.app.AvailableDoctors(r.Context(), params.DateTime)
-	if err != nil {
-		slog.Error(
-			UnexpectedError,
-			"error",
-			err.Error(),
-			"where",
-			"AvailableDoctors",
-			"dateTime",
-			params.DateTime.String(),
-		)
-		encodeError(w, internalServerError())
-		return
-	}
-
-	encode(w, http.StatusOK, doctors)
-}
-
 // PrescriptionDetail implements api.ServerInterface.
 func (s Server) PrescriptionDetail(
 	w http.ResponseWriter,
@@ -438,11 +372,7 @@ func (s Server) ReserveAppointmentResources(
 		return
 	}
 
-	updatedAppointment, err := s.app.ReserveAppointmentResources(
-		r.Context(),
-		appointmentId,
-		req,
-	)
+	err := s.app.ReserveAppointmentResources(r.Context(), appointmentId, req)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
 			apiErr := &ApiError{
@@ -481,7 +411,7 @@ func (s Server) ReserveAppointmentResources(
 		return
 	}
 
-	encode(w, http.StatusOK, updatedAppointment)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // UpdateCondition implements api.ServerInterface.
@@ -578,16 +508,22 @@ func (s Server) GetDoctors(w http.ResponseWriter, r *http.Request) {
 }
 
 // ConditionsInDate implements api.ServerInterface.
-func (s Server) ConditionsInDate(
+func (s Server) ConditionsInDateRange(
 	w http.ResponseWriter,
 	r *http.Request,
 	patientId api.PatientId,
-	params api.ConditionsInDateParams,
+	params api.ConditionsInDateRangeParams,
 ) {
+	var to *time.Time = nil
+	if params.To != nil {
+		to = &params.To.Time
+	}
+
 	conditions, err := s.app.PatientConditionsOnDate(
 		r.Context(),
 		patientId,
-		params.Date.Time,
+		params.From.Time,
+		to,
 	)
 	if err != nil {
 		slog.Error(
@@ -595,11 +531,13 @@ func (s Server) ConditionsInDate(
 			"error",
 			err.Error(),
 			"where",
-			"ConditionsInDate",
+			"ConditionsInDateRange",
 			"patientId",
 			patientId.String(),
-			"date",
-			params.Date.String(),
+			"from",
+			params.From,
+			"to",
+			params.To,
 		)
 		encodeError(w, internalServerError())
 		return
@@ -635,4 +573,42 @@ func (s Server) DeletePrescription(
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s Server) PrescriptionsInDateRange(
+	w http.ResponseWriter,
+	r *http.Request,
+	patientId api.PatientId,
+	params api.PrescriptionsInDateRangeParams,
+) {
+	var to *time.Time = nil
+	if params.To != nil {
+		to = &params.To.Time
+	}
+
+	prescriptions, err := s.app.PatientPrescriptionsInDateRange(
+		r.Context(),
+		patientId,
+		params.From.Time,
+		to,
+	)
+	if err != nil {
+		slog.Error(
+			UnexpectedError,
+			"error",
+			err.Error(),
+			"where",
+			"PrescriptionsInDateRange",
+			"patientId",
+			patientId.String(),
+			"from",
+			params.From,
+			"to",
+			params.To,
+		)
+		encodeError(w, internalServerError())
+		return
+	}
+
+	encode(w, http.StatusOK, api.Prescriptions{Prescriptions: prescriptions})
 }

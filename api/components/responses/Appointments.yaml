@@ -3,4 +3,4 @@ properties:
   appointments:
     type: array
     items:
-      $ref: "../schemas/appointments/Appointment.yaml"
+      $ref: "../schemas/appointments/AppointmentDisplay.yaml"

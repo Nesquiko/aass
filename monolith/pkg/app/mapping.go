@@ -173,9 +173,9 @@ func dataApptToPatientAppt(
 	d data.Doctor,
 	c *data.Condition,
 	prescriptions []data.Prescription,
-) api.PatientAppointment {
-	appt := api.PatientAppointment{
-		Id:                  &a.Id,
+) api.Appointment {
+	appt := api.Appointment{
+		Id:                  a.Id,
 		AppointmentDateTime: a.AppointmentDateTime,
 		Doctor:              dataDoctorToApiDoctor(d),
 		Reason:              a.Reason,
@@ -204,9 +204,9 @@ func dataApptToDoctorAppt(
 	equipment []data.Resource,
 	medicine []data.Resource,
 	prescriptions []data.Prescription,
-) api.DoctorAppointment {
-	doctorAppt := api.DoctorAppointment{
-		Id:                  &appt.Id,
+) api.Appointment {
+	doctorAppt := api.Appointment{
+		Id:                  appt.Id,
 		AppointmentDateTime: appt.AppointmentDateTime,
 		CancellationReason:  appt.CancellationReason,
 		CanceledBy:          (*api.UserRole)(appt.CancelledBy),

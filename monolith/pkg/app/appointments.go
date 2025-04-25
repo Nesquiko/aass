@@ -13,32 +13,32 @@ import (
 )
 
 // CreateAppointment implements App.
-func (a monolithApp) CreateAppointment(
+func (a MonolithApp) CreateAppointment(
 	ctx context.Context,
 	appt api.NewAppointmentRequest,
-) (api.PatientAppointment, error) {
+) (api.Appointment, error) {
 	appointment, err := a.db.CreateAppointment(ctx, newApptToDataAppt(appt))
 	if err != nil {
-		return api.PatientAppointment{}, fmt.Errorf("CreateAppointment create appointment: %w", err)
+		return api.Appointment{}, fmt.Errorf("CreateAppointment create appointment: %w", err)
 	}
 
 	doc, err := a.db.DoctorById(ctx, appointment.DoctorId)
 	if err != nil {
-		return api.PatientAppointment{}, fmt.Errorf("CreateAppointment find doctor: %w", err)
+		return api.Appointment{}, fmt.Errorf("CreateAppointment find doctor: %w", err)
 	}
 
 	var cond *data.Condition = nil
 	if appointment.ConditionId != nil {
 		c, err := a.db.ConditionById(ctx, *appointment.ConditionId)
 		if err != nil {
-			return api.PatientAppointment{}, fmt.Errorf("CreateAppointment find condition: %w", err)
+			return api.Appointment{}, fmt.Errorf("CreateAppointment find condition: %w", err)
 		}
 		cond = &c
 	}
 
 	prescriptions, err := a.db.PrescriptionByAppointmentId(ctx, appointment.Id)
 	if err != nil {
-		return api.PatientAppointment{}, fmt.Errorf(
+		return api.Appointment{}, fmt.Errorf(
 			"CreateAppointment fetch prescriptions: %w",
 			err,
 		)
@@ -47,7 +47,7 @@ func (a monolithApp) CreateAppointment(
 	return dataApptToPatientAppt(appointment, doc, cond, prescriptions), nil
 }
 
-func (a monolithApp) CancelAppointment(
+func (a MonolithApp) CancelAppointment(
 	ctx context.Context,
 	appointmentId uuid.UUID,
 	req api.AppointmentCancellation,
@@ -59,64 +59,25 @@ func (a monolithApp) CancelAppointment(
 	return nil
 }
 
-func (a monolithApp) PatientsAppointmentById(
+func (a MonolithApp) AppointmentById(
 	ctx context.Context,
-	patientId uuid.UUID,
 	appointmentId uuid.UUID,
-) (api.PatientAppointment, error) {
+) (api.Appointment, error) {
 	appointment, err := a.db.AppointmentById(ctx, appointmentId)
 	if err != nil {
-		return api.PatientAppointment{}, fmt.Errorf("PatientsAppointmentById: %w", err)
-	}
-
-	doc, err := a.db.DoctorById(ctx, appointment.DoctorId)
-	if err != nil {
-		return api.PatientAppointment{}, fmt.Errorf("PatientsAppointmentById find doctor: %w", err)
-	}
-
-	var cond *data.Condition
-	if appointment.ConditionId != nil {
-		c, err := a.db.ConditionById(ctx, *appointment.ConditionId)
-		if err != nil {
-			return api.PatientAppointment{}, fmt.Errorf(
-				"PatientsAppointmentById find condition: %w",
-				err,
-			)
-		}
-		cond = &c
-	}
-
-	prescriptions, err := a.db.PrescriptionByAppointmentId(ctx, appointment.Id)
-	if err != nil {
-		return api.PatientAppointment{}, fmt.Errorf(
-			"PatientsAppointmentById fetch prescriptions: %w",
-			err,
-		)
-	}
-
-	return dataApptToPatientAppt(appointment, doc, cond, prescriptions), nil
-}
-
-func (a monolithApp) DoctorsAppointmentById(
-	ctx context.Context,
-	doctorId uuid.UUID,
-	appointmentId uuid.UUID,
-) (api.DoctorAppointment, error) {
-	appointment, err := a.db.AppointmentById(ctx, appointmentId)
-	if err != nil {
-		return api.DoctorAppointment{}, fmt.Errorf("DoctorsAppointmentById: %w", err)
+		return api.Appointment{}, fmt.Errorf("DoctorsAppointmentById: %w", err)
 	}
 
 	patient, err := a.db.PatientById(ctx, appointment.PatientId)
 	if err != nil {
-		return api.DoctorAppointment{}, fmt.Errorf("DoctorsAppointmentById find patient: %w", err)
+		return api.Appointment{}, fmt.Errorf("DoctorsAppointmentById find patient: %w", err)
 	}
 
 	var cond *data.Condition
 	if appointment.ConditionId != nil {
 		c, err := a.db.ConditionById(ctx, *appointment.ConditionId)
 		if err != nil {
-			return api.DoctorAppointment{}, fmt.Errorf(
+			return api.Appointment{}, fmt.Errorf(
 				"DoctorsAppointmentById find condition: %w",
 				err,
 			)
@@ -126,7 +87,7 @@ func (a monolithApp) DoctorsAppointmentById(
 
 	resources, err := a.db.ResourcesByAppointmentId(ctx, appointmentId)
 	if err != nil {
-		return api.DoctorAppointment{}, fmt.Errorf(
+		return api.Appointment{}, fmt.Errorf(
 			"DoctorsAppointmentById fetch reservations: %w",
 			err,
 		)
@@ -146,7 +107,7 @@ func (a monolithApp) DoctorsAppointmentById(
 
 	prescriptions, err := a.db.PrescriptionByAppointmentId(ctx, appointmentId)
 	if err != nil {
-		return api.DoctorAppointment{}, fmt.Errorf(
+		return api.Appointment{}, fmt.Errorf(
 			"DoctorsAppointmentById fetch prescriptions: %w",
 			err,
 		)
@@ -163,11 +124,11 @@ func (a monolithApp) DoctorsAppointmentById(
 	), nil
 }
 
-func (a monolithApp) DecideAppointment(
+func (a MonolithApp) DecideAppointment(
 	ctx context.Context,
 	appointmentId uuid.UUID,
 	decision api.AppointmentDecision,
-) (api.DoctorAppointment, error) {
+) (api.Appointment, error) {
 	var resources []data.Resource
 	if decision.Facility != nil {
 		resources = append(resources, data.Resource{
@@ -197,24 +158,24 @@ func (a monolithApp) DecideAppointment(
 	)
 	if err != nil {
 		if errors.Is(err, data.ErrResourceUnavailable) {
-			return api.DoctorAppointment{}, fmt.Errorf(
+			return api.Appointment{}, fmt.Errorf(
 				"DecideAppointment: %w",
 				ErrResourceUnavailable,
 			)
 		}
-		return api.DoctorAppointment{}, fmt.Errorf("DecideAppointment: %w", err)
+		return api.Appointment{}, fmt.Errorf("DecideAppointment: %w", err)
 	}
 
 	patient, err := a.db.PatientById(ctx, appointment.PatientId)
 	if err != nil {
-		return api.DoctorAppointment{}, fmt.Errorf("DecideAppointment fetch patient: %w", err)
+		return api.Appointment{}, fmt.Errorf("DecideAppointment fetch patient: %w", err)
 	}
 
 	var cond *data.Condition
 	if appointment.ConditionId != nil {
 		c, err := a.db.ConditionById(ctx, *appointment.ConditionId)
 		if err != nil {
-			return api.DoctorAppointment{}, fmt.Errorf("DecideAppointment fetch condition: %w", err)
+			return api.Appointment{}, fmt.Errorf("DecideAppointment fetch condition: %w", err)
 		}
 		cond = &c
 	}
@@ -233,7 +194,7 @@ func (a monolithApp) DecideAppointment(
 
 	prescriptions, err := a.db.PrescriptionByAppointmentId(ctx, appointmentId)
 	if err != nil {
-		return api.DoctorAppointment{}, fmt.Errorf(
+		return api.Appointment{}, fmt.Errorf(
 			"DecideAppointment fetch prescriptions: %w",
 			err,
 		)
@@ -252,7 +213,7 @@ func (a monolithApp) DecideAppointment(
 	return doctorAppointment, nil
 }
 
-func (a monolithApp) DoctorTimeSlots(
+func (a MonolithApp) DoctorTimeSlots(
 	ctx context.Context,
 	doctorId uuid.UUID,
 	date time.Time,
@@ -286,32 +247,32 @@ func (a monolithApp) DoctorTimeSlots(
 	return api.DoctorTimeslots{Slots: slots}, nil
 }
 
-func (a monolithApp) RescheduleAppointment(
+func (a MonolithApp) RescheduleAppointment(
 	ctx context.Context,
 	appointmentId api.AppointmentId,
 	newDateTime time.Time,
-) (api.PatientAppointment, error) {
+) (api.Appointment, error) {
 	appt, err := a.db.RescheduleAppointment(ctx, appointmentId, newDateTime)
 	if err != nil {
 		if errors.Is(err, data.ErrDoctorUnavailable) {
-			return api.PatientAppointment{}, fmt.Errorf(
+			return api.Appointment{}, fmt.Errorf(
 				"RescheduleAppointment: %w",
 				ErrDoctorUnavailable,
 			)
 		}
-		return api.PatientAppointment{}, fmt.Errorf("RescheduleAppointment: %w", err)
+		return api.Appointment{}, fmt.Errorf("RescheduleAppointment: %w", err)
 	}
 
 	doc, err := a.db.DoctorById(ctx, appt.DoctorId)
 	if err != nil {
-		return api.PatientAppointment{}, fmt.Errorf("RescheduleAppointment find doctor: %w", err)
+		return api.Appointment{}, fmt.Errorf("RescheduleAppointment find doctor: %w", err)
 	}
 
 	var cond *data.Condition
 	if appt.ConditionId != nil {
 		c, err := a.db.ConditionById(ctx, *appt.ConditionId)
 		if err != nil {
-			return api.PatientAppointment{}, fmt.Errorf(
+			return api.Appointment{}, fmt.Errorf(
 				"RescheduleAppointment find condition: %w",
 				err,
 			)
@@ -321,7 +282,7 @@ func (a monolithApp) RescheduleAppointment(
 
 	prescriptions, err := a.db.PrescriptionByAppointmentId(ctx, appt.Id)
 	if err != nil {
-		return api.PatientAppointment{}, fmt.Errorf(
+		return api.Appointment{}, fmt.Errorf(
 			"RescheduleAppointment fetch prescriptions: %w",
 			err,
 		)

@@ -12,7 +12,7 @@ import (
 	"github.com/Nesquiko/wac/pkg/data"
 )
 
-func (a monolithApp) CreateResource(
+func (a MonolithApp) CreateResource(
 	ctx context.Context,
 	resource api.NewResource,
 ) (api.NewResource, error) {
@@ -28,31 +28,7 @@ func (a monolithApp) CreateResource(
 	}, nil
 }
 
-func (a monolithApp) ReserveResource(
-	ctx context.Context,
-	resourceId uuid.UUID,
-	res api.ResourceReservation,
-) error {
-	resource, err := a.db.ResourceById(ctx, resourceId)
-	if err != nil {
-		return fmt.Errorf("ReserveResource can't find resource by id %q: %w", resourceId, err)
-	}
-	_, err = a.db.CreateReservation(
-		ctx,
-		res.AppointmentId,
-		resourceId,
-		resource.Name,
-		resource.Type,
-		res.Start,
-		res.End,
-	)
-	if err != nil {
-		return fmt.Errorf("ReserveResource can't reserve resource: %w", err)
-	}
-	return nil
-}
-
-func (a monolithApp) AvailableResources(
+func (a MonolithApp) AvailableResources(
 	ctx context.Context,
 	dateTime time.Time,
 ) (api.AvailableResources, error) {
@@ -82,20 +58,20 @@ func (a monolithApp) AvailableResources(
 	return available, nil
 }
 
-func (a monolithApp) ReserveAppointmentResources(
+func (a MonolithApp) ReserveAppointmentResources(
 	ctx context.Context,
 	appointmentId uuid.UUID,
 	payload api.ReserveAppointmentResourcesJSONBody,
-) (api.DoctorAppointment, error) {
+) error {
 	appointment, err := a.db.AppointmentById(ctx, appointmentId)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
-			return api.DoctorAppointment{}, fmt.Errorf(
+			return fmt.Errorf(
 				"ReserveAppointmentResources: appointment %w",
 				ErrNotFound,
 			)
 		}
-		return api.DoctorAppointment{}, fmt.Errorf(
+		return fmt.Errorf(
 			"ReserveAppointmentResources fetch appointment failed: %w",
 			err,
 		)
@@ -104,25 +80,25 @@ func (a monolithApp) ReserveAppointmentResources(
 	reservationStart := payload.Start
 	reservationEnd := appointment.EndTime
 
-	if payload.Equipment != nil {
-		resourceId := *payload.Equipment
+	if payload.EquipmentId != nil {
+		resourceId := *payload.EquipmentId
 		resource, err := a.db.ResourceById(ctx, resourceId)
 		if err != nil {
 			if errors.Is(err, data.ErrNotFound) {
-				return api.DoctorAppointment{}, fmt.Errorf(
+				return fmt.Errorf(
 					"ReserveAppointmentResources: equipment resource %s %w",
 					resourceId,
 					ErrNotFound,
 				)
 			}
-			return api.DoctorAppointment{}, fmt.Errorf(
+			return fmt.Errorf(
 				"ReserveAppointmentResources fetch equipment resource %s failed: %w",
 				resourceId,
 				err,
 			)
 		}
 		if resource.Type != data.ResourceTypeEquipment {
-			return api.DoctorAppointment{}, fmt.Errorf(
+			return fmt.Errorf(
 				"ReserveAppointmentResources: resource %s is not equipment",
 				resourceId,
 			)
@@ -138,13 +114,13 @@ func (a monolithApp) ReserveAppointmentResources(
 		)
 		if err != nil {
 			if errors.Is(err, data.ErrResourceUnavailable) {
-				return api.DoctorAppointment{}, fmt.Errorf(
+				return fmt.Errorf(
 					"ReserveAppointmentResources: equipment %s %w",
 					resourceId,
 					ErrResourceUnavailable,
 				)
 			}
-			return api.DoctorAppointment{}, fmt.Errorf(
+			return fmt.Errorf(
 				"ReserveAppointmentResources create equipment reservation for %s failed: %w",
 				resourceId,
 				err,
@@ -157,20 +133,20 @@ func (a monolithApp) ReserveAppointmentResources(
 		resource, err := a.db.ResourceById(ctx, resourceId)
 		if err != nil {
 			if errors.Is(err, data.ErrNotFound) {
-				return api.DoctorAppointment{}, fmt.Errorf(
+				return fmt.Errorf(
 					"ReserveAppointmentResources: facility resource %s %w",
 					resourceId,
 					ErrNotFound,
 				)
 			}
-			return api.DoctorAppointment{}, fmt.Errorf(
+			return fmt.Errorf(
 				"ReserveAppointmentResources fetch facility resource %s failed: %w",
 				resourceId,
 				err,
 			)
 		}
 		if resource.Type != data.ResourceTypeFacility {
-			return api.DoctorAppointment{}, fmt.Errorf(
+			return fmt.Errorf(
 				"ReserveAppointmentResources: resource %s is not a facility",
 				resourceId,
 			)
@@ -186,13 +162,13 @@ func (a monolithApp) ReserveAppointmentResources(
 		)
 		if err != nil {
 			if errors.Is(err, data.ErrResourceUnavailable) {
-				return api.DoctorAppointment{}, fmt.Errorf(
+				return fmt.Errorf(
 					"ReserveAppointmentResources: facility %s %w",
 					resourceId,
 					ErrResourceUnavailable,
 				)
 			}
-			return api.DoctorAppointment{}, fmt.Errorf(
+			return fmt.Errorf(
 				"ReserveAppointmentResources create facility reservation for %s failed: %w",
 				resourceId,
 				err,
@@ -200,25 +176,25 @@ func (a monolithApp) ReserveAppointmentResources(
 		}
 	}
 
-	if payload.Medicine != nil {
-		resourceId := *payload.Medicine
+	if payload.MedicineId != nil {
+		resourceId := *payload.MedicineId
 		resource, err := a.db.ResourceById(ctx, resourceId)
 		if err != nil {
 			if errors.Is(err, data.ErrNotFound) {
-				return api.DoctorAppointment{}, fmt.Errorf(
+				return fmt.Errorf(
 					"ReserveAppointmentResources: medicine resource %s %w",
 					resourceId,
 					ErrNotFound,
 				)
 			}
-			return api.DoctorAppointment{}, fmt.Errorf(
+			return fmt.Errorf(
 				"ReserveAppointmentResources fetch medicine resource %s failed: %w",
 				resourceId,
 				err,
 			)
 		}
 		if resource.Type != data.ResourceTypeMedicine {
-			return api.DoctorAppointment{}, fmt.Errorf(
+			return fmt.Errorf(
 				"ReserveAppointmentResources: resource %s is not medicine",
 				resourceId,
 			)
@@ -234,13 +210,13 @@ func (a monolithApp) ReserveAppointmentResources(
 		)
 		if err != nil {
 			if errors.Is(err, data.ErrResourceUnavailable) {
-				return api.DoctorAppointment{}, fmt.Errorf(
+				return fmt.Errorf(
 					"ReserveAppointmentResources: medicine %s %w",
 					resourceId,
 					ErrResourceUnavailable,
 				)
 			}
-			return api.DoctorAppointment{}, fmt.Errorf(
+			return fmt.Errorf(
 				"ReserveAppointmentResources create medicine reservation for %s failed: %w",
 				resourceId,
 				err,
@@ -248,68 +224,5 @@ func (a monolithApp) ReserveAppointmentResources(
 		}
 	}
 
-	patient, err := a.db.PatientById(ctx, appointment.PatientId)
-	if err != nil {
-		return api.DoctorAppointment{}, fmt.Errorf(
-			"ReserveAppointmentResources fetch patient %s failed: %w",
-			appointment.PatientId,
-			err,
-		)
-	}
-
-	var cond *data.Condition
-	if appointment.ConditionId != nil {
-		c, err := a.db.ConditionById(ctx, *appointment.ConditionId)
-		if err != nil {
-			return api.DoctorAppointment{}, fmt.Errorf(
-				"ReserveAppointmentResources fetch condition %s failed: %w",
-				*appointment.ConditionId,
-				err,
-			)
-		}
-		cond = &c
-	}
-
-	allReservedResources, err := a.db.ResourcesByAppointmentId(
-		ctx,
-		appointmentId,
-	)
-	if err != nil {
-		return api.DoctorAppointment{}, fmt.Errorf(
-			"ReserveAppointmentResources fetch final resources failed: %w",
-			err,
-		)
-	}
-
-	var facilities, equipment, medicine []data.Resource
-	for _, resource := range allReservedResources {
-		switch resource.Type {
-		case data.ResourceTypeFacility:
-			facilities = append(facilities, resource)
-		case data.ResourceTypeEquipment:
-			equipment = append(equipment, resource)
-		case data.ResourceTypeMedicine:
-			medicine = append(medicine, resource)
-		}
-	}
-
-	prescriptions, err := a.db.PrescriptionByAppointmentId(ctx, appointmentId)
-	if err != nil {
-		return api.DoctorAppointment{}, fmt.Errorf(
-			"ReserveAppointmentResources fetch prescriptions: %w",
-			err,
-		)
-	}
-
-	doctorAppointment := dataApptToDoctorAppt(
-		appointment,
-		patient,
-		cond,
-		facilities,
-		equipment,
-		medicine,
-		prescriptions,
-	)
-
-	return doctorAppointment, nil
+	return nil
 }

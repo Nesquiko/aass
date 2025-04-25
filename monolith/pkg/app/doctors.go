@@ -12,7 +12,7 @@ import (
 	"github.com/Nesquiko/wac/pkg/data"
 )
 
-func (a monolithApp) CreateDoctor(
+func (a MonolithApp) CreateDoctor(
 	ctx context.Context,
 	d api.DoctorRegistration,
 ) (api.Doctor, error) {
@@ -27,7 +27,7 @@ func (a monolithApp) CreateDoctor(
 	return dataDoctorToApiDoctor(doctor), nil
 }
 
-func (a monolithApp) DoctorById(ctx context.Context, id uuid.UUID) (api.Doctor, error) {
+func (a MonolithApp) DoctorById(ctx context.Context, id uuid.UUID) (api.Doctor, error) {
 	doctor, err := a.db.DoctorById(ctx, id)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
@@ -39,7 +39,7 @@ func (a monolithApp) DoctorById(ctx context.Context, id uuid.UUID) (api.Doctor, 
 	return dataDoctorToApiDoctor(doctor), nil
 }
 
-func (a monolithApp) DoctorByEmail(ctx context.Context, email string) (api.Doctor, error) {
+func (a MonolithApp) DoctorByEmail(ctx context.Context, email string) (api.Doctor, error) {
 	doctor, err := a.db.DoctorByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, data.ErrNotFound) {
@@ -51,12 +51,12 @@ func (a monolithApp) DoctorByEmail(ctx context.Context, email string) (api.Docto
 	return dataDoctorToApiDoctor(doctor), nil
 }
 
-func (a monolithApp) DoctorsCalendar(
+func (a MonolithApp) DoctorsCalendar(
 	ctx context.Context,
 	doctorId api.DoctorId,
 	from api.From,
 	to *api.To,
-) (api.DoctorCalendar, error) {
+) (api.Appointments, error) {
 	var toTime *time.Time = nil
 	if to != nil {
 		toTime = &to.Time
@@ -64,22 +64,22 @@ func (a monolithApp) DoctorsCalendar(
 
 	appts, err := a.db.AppointmentsByDoctorId(ctx, doctorId, from.Time, toTime)
 	if err != nil {
-		return api.DoctorCalendar{}, fmt.Errorf("DoctorCalendar: %w", err)
+		return api.Appointments{}, fmt.Errorf("DoctorCalendar: %w", err)
 	}
 
 	doctor, err := a.db.DoctorById(ctx, doctorId)
 	if err != nil {
-		return api.DoctorCalendar{}, fmt.Errorf("DoctorCalendar doc find: %w", err)
+		return api.Appointments{}, fmt.Errorf("DoctorCalendar doc find: %w", err)
 	}
 
-	calendar := api.DoctorCalendar{
+	calendar := api.Appointments{
 		Appointments: asPtr(make([]api.AppointmentDisplay, len(appts))),
 	}
 
 	for i, appt := range appts {
 		patient, err := a.db.PatientById(ctx, appt.PatientId)
 		if err != nil {
-			return api.DoctorCalendar{}, fmt.Errorf("DoctorCalendar patient find: %w", err)
+			return api.Appointments{}, fmt.Errorf("DoctorCalendar patient find: %w", err)
 		}
 		(*calendar.Appointments)[i] = dataApptToApptDisplay(appt, patient, doctor)
 
@@ -88,7 +88,7 @@ func (a monolithApp) DoctorsCalendar(
 	return calendar, nil
 }
 
-func (a monolithApp) AvailableDoctors(
+func (a MonolithApp) AvailableDoctors(
 	ctx context.Context,
 	dateTime time.Time,
 ) ([]api.Doctor, error) {
@@ -101,7 +101,7 @@ func (a monolithApp) AvailableDoctors(
 	return availableApiDoctors, nil
 }
 
-func (a monolithApp) GetAllDoctors(ctx context.Context) ([]api.Doctor, error) {
+func (a MonolithApp) GetAllDoctors(ctx context.Context) ([]api.Doctor, error) {
 	allDataDoctors, err := a.db.GetAllDoctors(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("GetAllDoctors failed: %w", err)
