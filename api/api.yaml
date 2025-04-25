@@ -23,6 +23,7 @@ paths:
     $ref: "./paths/auth_register.yaml"
   /auth/login:
     $ref: "./paths/auth_login.yaml"
+
   /patients/{patientId}:
     $ref: "./paths/patients_patientId.yaml"
 
@@ -38,10 +39,10 @@ paths:
     $ref: "./paths/appointments_appointmentId.yaml"
   /appointments/patient/{patientId}:
     $ref: "./paths/appointment_patient_patientId.yaml"
-  # /appointments/doctor/{doctorId}:
-  #   $ref: "./paths/doctors_doctorId_calendar.yaml"
-  # /timeslots/{doctorId}:
-  #   $ref: "./paths/doctors_doctorId_timeslots.yaml"
+  /appointments/doctor/{doctorId}:
+    $ref: "./paths/appointments_doctor_doctorId.yaml"
+  /timeslots/{doctorId}:
+    $ref: "./paths/timeslots_doctorId.yaml"
 
   # Conditions service
   /conditions:
@@ -56,13 +57,13 @@ paths:
     $ref: "./paths/prescriptions.yaml"
   /prescriptions/{prescriptionId}:
     $ref: "./paths/prescriptions_prescriptionId.yaml"
+  /prescriptions/patient/{patientId}:
+    $ref: "./paths/prescriptions_patient_patientId.yaml"
 
   # Resources service
   /resources:
     $ref: "./paths/resources.yaml"
   /resources/available:
     $ref: "./paths/resources_available.yaml"
-  /resources/{resourceId}:
-    $ref: "./paths/resources_resourceId.yaml"
   /resources/reserve/{appointmentId}:
     $ref: "./paths/resources_reserve_appointmentId.yaml"

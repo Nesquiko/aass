@@ -1,15 +1,15 @@
 get:
   tags:
-    - Conditions
-  summary: Conditions in date range
-  operationId: conditionsInDateRange
+    - Prescriptions
+  summary: Prescriptions in date range
+  operationId: prescriptionsInDateRange
   parameters:
     - $ref: "../components/parameters/path/patientId.yaml"
     - $ref: "../components/parameters/query/from.yaml"
     - $ref: "../components/parameters/query/to.yaml"
   responses:
     "200":
-      $ref: "../components/responses/Conditions.yaml"
+      $ref: "../components/responses/Prescriptions.yaml"
 
     "500":
       $ref: "../components/responses/InternalServerErrorResponse.yaml"

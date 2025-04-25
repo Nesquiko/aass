@@ -28,12 +28,8 @@ post:
               format: uuid
 
   responses:
-    "200":
+    "204":
       description: Successfully reserved a resource for an appointment.
-      content:
-        application/json:
-          schema:
-            $ref: "../components/schemas/appointments/Appointment.yaml"
 
     "404":
       description: Some resource, or appointment wasn't found

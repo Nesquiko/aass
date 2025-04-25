@@ -1,8 +1,0 @@
-name: time
-in: query
-required: true
-description: The time slot to check availability for (HH:MM format, 24-hour clock).
-schema:
-  type: string
-  pattern: '^([01]\d|2[0-3]):([0-5]\d)$'
-example: "11:30"

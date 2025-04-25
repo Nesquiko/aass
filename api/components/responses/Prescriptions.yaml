@@ -1,0 +1,12 @@
+description: Successfully retrieved list of prescriptions.
+content:
+  application/json:
+    schema:
+      type: object
+      required:
+        - prescriptions
+      properties:
+        prescriptions:
+          type: array
+          items:
+            $ref: "../schemas/prescription/PrescriptionDisplay.yaml"

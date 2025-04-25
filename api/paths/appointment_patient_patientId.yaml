@@ -13,11 +13,6 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              appointments:
-                type: array
-                items:
-                  $ref: "../components/schemas/appointments/Appointment.yaml"
+            $ref: "../components/responses/Appointments.yaml"
     "500":
       $ref: "../components/responses/InternalServerErrorResponse.yaml"
