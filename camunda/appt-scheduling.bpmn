@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_AppointmentHandling_V4" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.31.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.22.0">
+  <bpmn:process id="Process_HandleAppointmentRequest" name="Handle Appointment Request" isExecutable="true">
+    <bpmn:documentation>Starts after initial API validation. Receives appointment details (appointmentId, patientId, doctorId, appointmentDateTime, etc.) as process variables.</bpmn:documentation>
+    <bpmn:startEvent id="StartEvent_AppointmentRequestReceived" name="Appointment request">
+      <bpmn:outgoing>Flow_To_ReviewAppointment</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Activity_ReviewAppointment" name="Review appointment request" camunda:assignee="${doctorId}">
+      <bpmn:documentation>Doctor reviews the request details. Backend completes this task setting 'doctorDecision' ('accepted'/'denied'). If accepted, also sets 'facilities', 'equipment', 'medicine' variables based on API input.</bpmn:documentation>
+      <bpmn:incoming>Flow_To_ReviewAppointment</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_DecisionGateway</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_To_ReviewAppointment" sourceRef="StartEvent_AppointmentRequestReceived" targetRef="Activity_ReviewAppointment" />
+    <bpmn:exclusiveGateway id="Gateway_DoctorDecision" name="Decision made?">
+      <bpmn:incoming>Flow_To_DecisionGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_Accepted</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Denied</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_To_DecisionGateway" sourceRef="Activity_ReviewAppointment" targetRef="Gateway_DoctorDecision" />
+    <bpmn:serviceTask id="Activity_ReserveResources" name="Reserve resources" camunda:type="external" camunda:topic="appointment-reserve-resources">
+      <bpmn:documentation>Publishes event/calls service to reserve resources (facility, equipment, medicine) based on variables set in the review task. Passes appointmentId, appointmentDateTime, facilities, equipment, medicine.</bpmn:documentation>
+      <bpmn:incoming>Flow_Accepted</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_AcceptedEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_Accepted" name="Accepted" sourceRef="Gateway_DoctorDecision" targetRef="Activity_ReserveResources">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${doctorDecision == 'accepted'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:endEvent id="EndEvent_ResourcesReserved" name="Appointment scheduled">
+      <bpmn:incoming>Flow_To_AcceptedEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_To_AcceptedEnd" sourceRef="Activity_ReserveResources" targetRef="EndEvent_ResourcesReserved" />
+    <bpmn:endEvent id="EndEvent_AppointmentDenied" name="Appointment denied">
+      <bpmn:incoming>Flow_Denied</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Denied" name="Denied" sourceRef="Gateway_DoctorDecision" targetRef="EndEvent_AppointmentDenied">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${doctorDecision == 'denied'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_HandleAppointmentRequest">
+      <bpmndi:BPMNShape id="StartEvent_AppointmentRequestReceived_di" bpmnElement="StartEvent_AppointmentRequestReceived">
+        <dc:Bounds x="179" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="167" y="145" width="62" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_ReviewAppointment_di" bpmnElement="Activity_ReviewAppointment">
+        <dc:Bounds x="270" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_DoctorDecision_di" bpmnElement="Gateway_DoctorDecision" isMarkerVisible="true">
+        <dc:Bounds x="435" y="95" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="422" y="65" width="79" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_ReserveResources_di" bpmnElement="Activity_ReserveResources">
+        <dc:Bounds x="550" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_ResourcesReserved_di" bpmnElement="EndEvent_ResourcesReserved">
+        <dc:Bounds x="712" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="703" y="145" width="62" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_AppointmentDenied_di" bpmnElement="EndEvent_AppointmentDenied">
+        <dc:Bounds x="552" y="202" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="541" y="245" width="62" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_To_ReviewAppointment_di" bpmnElement="Flow_To_ReviewAppointment">
+        <di:waypoint x="215" y="120" />
+        <di:waypoint x="270" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_DecisionGateway_di" bpmnElement="Flow_To_DecisionGateway">
+        <di:waypoint x="370" y="120" />
+        <di:waypoint x="435" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Accepted_di" bpmnElement="Flow_Accepted">
+        <di:waypoint x="485" y="120" />
+        <di:waypoint x="550" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="499" y="102" width="47" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_AcceptedEnd_di" bpmnElement="Flow_To_AcceptedEnd">
+        <di:waypoint x="650" y="120" />
+        <di:waypoint x="712" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Denied_di" bpmnElement="Flow_Denied">
+        <di:waypoint x="460" y="145" />
+        <di:waypoint x="460" y="220" />
+        <di:waypoint x="552" y="220" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="476" y="180" width="34" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
