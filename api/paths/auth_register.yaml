@@ -24,14 +24,6 @@ post:
         application/problem+json:
           schema:
             $ref: "../components/schemas/ErrorDetail.yaml"
-          examples:
-            duplicateEmail:
-              summary: Example duplicate email error (409)
-              value:
-                title: "Conflict"
-                status: 409
-                code: "user.email-exists"
-                detail: "A user with email new.patient@example.com already exists."
 
     "500":
       $ref: "../components/responses/InternalServerErrorResponse.yaml"

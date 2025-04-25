@@ -1,0 +1,53 @@
+type: object
+description: Contains information about an appointment.
+required:
+  - id
+  - appointmentDateTime
+  - type
+  - status
+  - patient
+  - doctor
+properties:
+  id:
+    type: string
+    format: uuid
+  appointmentDateTime:
+    type: string
+    format: date-time
+  type:
+    $ref: "./AppointmentType.yaml"
+  condition:
+    $ref: "../conditions/ConditionDisplay.yaml"
+  status:
+    $ref: "./AppointmentStatus.yaml"
+  reason:
+    type: string
+  cancellationReason:
+    type: string
+  canceledBy:
+    $ref: "../auth/UserRole.yaml"
+  denialReason:
+    type: string
+  prescriptions:
+    type: array
+    items:
+      $ref: "../prescription/PrescriptionDisplay.yaml"
+  patient:
+    $ref: "../auth/Patient.yaml"
+  doctor:
+    $ref: "../auth/Doctor.yaml"
+  facilities:
+    type: array
+    description: List of required facilities for the appointment.
+    items:
+      $ref: "../resources/Facility.yaml"
+  equipment:
+    type: array
+    description: List of required equipment for the appointment.
+    items:
+      $ref: "../resources/Equipment.yaml"
+  medicine:
+    type: array
+    description: List of required medicine for the appointment.
+    items:
+      $ref: "../resources/Medicine.yaml"

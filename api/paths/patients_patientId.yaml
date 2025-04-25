@@ -20,14 +20,6 @@ get:
         application/problem+json:
           schema:
             $ref: "../components/schemas/ErrorDetail.yaml"
-          examples:
-            patientNotFound:
-              summary: Example patient not found (404)
-              value:
-                title: "Resource Not Found"
-                status: 404
-                code: "patient.not-found"
-                detail: "Patient with ID f47ac10b-58cc-4372-a567-0e02b2c3d479 not found."
 
     "500":
       $ref: "../components/responses/InternalServerErrorResponse.yaml"

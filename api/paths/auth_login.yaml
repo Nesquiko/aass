@@ -36,12 +36,6 @@ post:
   responses:
     "200":
       description: Login successful. Sets session cookie and returns user details.
-      headers:
-        Set-Cookie:
-          schema:
-            type: string
-            example: "session_id=abcde12345; Path=/; HttpOnly; Secure; SameSite=Lax"
-          description: Session cookie set upon successful login. Contains session identifier.
       content:
         application/json:
           schema:
@@ -53,14 +47,6 @@ post:
         application/problem+json:
           schema:
             $ref: "../components/schemas/ErrorDetail.yaml"
-          examples:
-            invalidCredentials:
-              summary: Example invalid credentials (401)
-              value:
-                title: "Unauthorized"
-                status: 401
-                code: "auth.invalid-credentials"
-                detail: "No user found with the provided email and role."
 
     "500":
       $ref: "../components/responses/InternalServerErrorResponse.yaml"

@@ -1,3 +1,20 @@
+get:
+  tags:
+    - Appointments
+  summary: Get appointment details
+  operationId: patientsAppointment
+  parameters:
+    - $ref: "../components/parameters/path/appointmentId.yaml"
+  responses:
+    "200":
+      description: Appointment details.
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/appointments/Appointment.yaml"
+    "500":
+      $ref: "../components/responses/InternalServerErrorResponse.yaml"
+
 post:
   tags:
     - Appointments
@@ -18,7 +35,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/appointments/DoctorAppointment.yaml"
+            $ref: "../components/schemas/appointments/Appointment.yaml"
     "500":
       $ref: "../components/responses/InternalServerErrorResponse.yaml"
 
@@ -43,7 +60,7 @@ patch:
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/appointments/PatientAppointment.yaml"
+            $ref: "../components/schemas/appointments/Appointment.yaml"
     "500":
       $ref: "../components/responses/InternalServerErrorResponse.yaml"
 

@@ -1,8 +1,0 @@
-allOf:
-  - $ref: "./AppointmentBase.yaml"
-  - type: object
-    required:
-      - doctor
-    properties:
-      doctor:
-        $ref: "../auth/Doctor.yaml"

@@ -9,10 +9,16 @@ get:
     - $ref: "../components/parameters/query/to.yaml"
   responses:
     "200":
-      description: Returned doctor's calendar for a given time period
+      description: Returned doctor's appointments for a given time period
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/DoctorCalendar.yaml"
+            type: object
+            properties:
+              appointments:
+                type: array
+                items:
+                  $ref: "../components/schemas/appointments/AppointmentDisplay.yaml"
+
     "500":
       $ref: "../components/responses/InternalServerErrorResponse.yaml"

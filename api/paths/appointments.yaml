@@ -16,6 +16,6 @@ post:
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/appointments/PatientAppointment.yaml"
+            $ref: "../components/schemas/appointments/Appointment.yaml"
     "500":
       $ref: "../components/responses/InternalServerErrorResponse.yaml"

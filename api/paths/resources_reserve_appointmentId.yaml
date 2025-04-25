@@ -20,10 +20,10 @@ post:
             facilityId:
               type: string
               format: uuid
-            medicine:
+            medicineId:
               type: string
               format: uuid
-            equipment:
+            equipmentId:
               type: string
               format: uuid
 
@@ -33,7 +33,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/appointments/DoctorAppointment.yaml"
+            $ref: "../components/schemas/appointments/Appointment.yaml"
 
     "404":
       description: Some resource, or appointment wasn't found

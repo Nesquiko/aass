@@ -1,6 +1,6 @@
 openapi: 3.0.4
 info:
-  title: MediCal API
+  title: MediCal MicroServices API
   version: 1.0.0
   license:
     name: MIT
@@ -18,16 +18,32 @@ servers:
     url: /api
 
 paths:
+  # User service
   /auth/register:
     $ref: "./paths/auth_register.yaml"
   /auth/login:
     $ref: "./paths/auth_login.yaml"
+  /patients/{patientId}:
+    $ref: "./paths/patients_patientId.yaml"
 
+  /doctors:
+    $ref: "./paths/doctors.yaml"
+  /doctors/{doctorId}:
+    $ref: "./paths/doctors_doctorId.yaml"
+
+  # Appointments service
   /appointments:
     $ref: "./paths/appointments.yaml"
   /appointments/{appointmentId}:
     $ref: "./paths/appointments_appointmentId.yaml"
+  /appointments/patient/{patientId}:
+    $ref: "./paths/appointment_patient_patientId.yaml"
+  # /appointments/doctor/{doctorId}:
+  #   $ref: "./paths/doctors_doctorId_calendar.yaml"
+  # /timeslots/{doctorId}:
+  #   $ref: "./paths/doctors_doctorId_timeslots.yaml"
 
+  # Conditions service
   /conditions:
     $ref: "./paths/conditions.yaml"
   /conditions/{conditionId}:
@@ -35,33 +51,13 @@ paths:
   /conditions/patient/{patientId}:
     $ref: "./paths/conditions_patient_patientId.yaml"
 
+  # Prescriptions service
   /prescriptions:
     $ref: "./paths/prescriptions.yaml"
   /prescriptions/{prescriptionId}:
     $ref: "./paths/prescriptions_prescriptionId.yaml"
 
-  /patients/{patientId}:
-    $ref: "./paths/patients_patientId.yaml"
-  /patients/{patientId}/calendar:
-    $ref: "./paths/patients_patientId_calendar.yaml"
-  /patients/{patientId}/medical-history/files:
-    $ref: "./paths/patients_medical_history.yaml"
-  /patients/{patientId}/appointment/{appointmentId}:
-    $ref: "./paths/patients_patientId_appointment_appointmentId.yaml"
-
-  /doctors:
-    $ref: "./paths/doctors.yaml"
-  /doctors/available:
-    $ref: "./paths/doctors_available.yaml"
-  /doctors/{doctorId}:
-    $ref: "./paths/doctors_doctorId.yaml"
-  /doctors/{doctorId}/calendar:
-    $ref: "./paths/doctors_doctorId_calendar.yaml"
-  /doctors/{doctorId}/appointment/{appointmentId}:
-    $ref: "./paths/doctors_doctorId_appointment_appointmentId.yaml"
-  /doctors/{doctorId}/timeslots:
-    $ref: "./paths/doctors_doctorId_timeslots.yaml"
-
+  # Resources service
   /resources:
     $ref: "./paths/resources.yaml"
   /resources/available:
