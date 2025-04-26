@@ -21,7 +21,7 @@ import (
 )
 
 type Disconnecter interface {
-	Disconnect() error
+	Disconnect(ctx context.Context) error
 }
 
 type (

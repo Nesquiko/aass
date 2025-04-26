@@ -58,7 +58,7 @@ func Decode[T any](w http.ResponseWriter, r *http.Request) (T, *ApiError) {
 		return dst, decodeErrToApiErrorWithCode(decErr, decErr.code)
 	}
 	if err != nil {
-		return dst, decodeErrToApiError(err)
+		return dst, DecodeErrToApiError(err)
 	}
 	return dst, nil
 }
@@ -144,7 +144,7 @@ const (
 	DecodingErrorTitle = "Request couldn't be decoded"
 )
 
-func decodeErrToApiError(err error) *ApiError {
+func DecodeErrToApiError(err error) *ApiError {
 	return decodeErrToApiErrorWithCode(err, DecodingErrorCode)
 }
 

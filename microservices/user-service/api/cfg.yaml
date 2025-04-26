@@ -8,3 +8,5 @@ output: api.gen.go
 output-options:
   nullable-type: true
   skip-prune: true
+import-mapping:
+  ../../common/server/api/common-openapi.yaml: github.com/Nesquiko/aass/common/server/api
