@@ -14,6 +14,7 @@ services:
       - user-service
       - resource-service
       - medical-service
+      - appointment-service
 
   mongo_db:
     image: mongo:7.0-rc
@@ -79,6 +80,19 @@ services:
     container_name: medical-service
     env_file:
       - ./medical-service/local.env
+    networks:
+      - medical_network
+    restart: unless-stopped
+    depends_on:
+      - mongo_db
+
+  appointment-service:
+    build:
+      context: .
+      dockerfile: ./appointment-service/Dockerfile
+    container_name: appointment-service
+    env_file:
+      - ./appointment-service/local.env
     networks:
       - medical_network
     restart: unless-stopped

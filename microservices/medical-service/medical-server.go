@@ -508,3 +508,32 @@ func (m medicalServer) UpdatePrescription(
 
 	server.Encode(w, http.StatusOK, dataPrescToPresc(updatedDbPrescription, prescAppt))
 }
+
+func (m medicalServer) GetPrescriptionsByAppointmentId(
+	w http.ResponseWriter,
+	r *http.Request,
+	appointmentId api.AppointmentId,
+) {
+	prescs, err := m.db.PrescriptionByAppointmentId(r.Context(), appointmentId)
+
+	if errors.Is(err, ErrNotFound) {
+		server.EncodeError(w, server.NotFoundId("Prescriptions", appointmentId))
+		return
+	} else if err != nil {
+		slog.Error(
+			server.UnexpectedError,
+			"error",
+			err.Error(),
+			"where",
+			"GetPrescriptionsByAppointmentId",
+			"appointmentId",
+			appointmentId,
+		)
+		server.EncodeError(w, server.InternalServerError())
+		return
+	}
+
+	server.Encode(w, http.StatusOK, api.Prescriptions{
+		Prescriptions: server.Map(prescs, dataPrescToPrescDisplay),
+	})
+}

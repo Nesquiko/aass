@@ -1,0 +1,300 @@
+openapi: 3.0.4
+info:
+  title: User service API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - description: Endpoint
+    url: /
+tags:
+  - name: Auth
+  - name: Doctors
+  - name: Patients
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      operationId: registerUser
+      requestBody:
+        description: Doctor details for registration.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Registration"
+      responses:
+        "201":
+          description: User registered successfully. Returns the created user object.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "409":
+          description: Conflict - A user with the provided email already exists.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../../common/server/api/common-openapi.yaml#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: User Login
+      operationId: loginUser
+      requestBody:
+        description: User credentials for login.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: LoginRequest
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address.
+                  example: john.doe@example.com
+                role:
+                  $ref: "#/components/schemas/UserRole"
+              required:
+                - email
+                - role
+            examples:
+              patientLogin:
+                summary: Example patient login request
+                value:
+                  email: jane.roe@example.com
+                  role: patient
+              doctorLogin:
+                summary: Example doctor login request
+                value:
+                  email: dr.house@example.com
+                  role: doctor
+      responses:
+        "200":
+          description: Login successful. Sets session cookie and returns user details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized - Invalid email or role combination (user not found).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../../common/server/api/common-openapi.yaml#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /patients/{patientId}:
+    get:
+      tags:
+        - Patients
+      summary: Get patient by ID
+      description: Retrieves the details of a specific patient by their unique identifier.
+      operationId: getPatientById
+      parameters:
+        - $ref: "#/components/parameters/patientId"
+      responses:
+        "200":
+          description: Successfully retrieved patient details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Not Found - The specified patient ID does not exist.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../../common/server/api/common-openapi.yaml#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /doctors:
+    get:
+      tags:
+        - Doctors
+      summary: Get doctors
+      operationId: getDoctors
+      responses:
+        "200":
+          $ref: "#/components/responses/Doctors"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /doctors/{doctorId}:
+    get:
+      tags:
+        - Doctors
+      summary: Get doctor by ID
+      description: Retrieves the details of a specific doctor by their unique identifier.
+      operationId: getDoctorById
+      parameters:
+        - $ref: "#/components/parameters/doctorId"
+      responses:
+        "200":
+          description: Successfully retrieved doctor details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Doctor"
+        "404":
+          description: Not Found - The specified doctor ID does not exist.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../../common/server/api/common-openapi.yaml#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+components:
+  schemas:
+    UserRole:
+      type: string
+      enum:
+        - patient
+        - doctor
+    PatientRegistration:
+      type: object
+      required:
+        - email
+        - firstName
+        - lastName
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+          example: new.user@example.com
+        firstName:
+          type: string
+          minLength: 1
+          example: John
+        lastName:
+          type: string
+          minLength: 1
+          example: Doe
+        role:
+          $ref: "#/components/schemas/UserRole"
+    SpecializationEnum:
+      type: string
+      description: Medical specialization of a doctor.
+      enum:
+        - surgeon
+        - gastroenterologist
+        - pediatrician
+        - diagnostician
+        - endocrinologist
+        - general_practitioner
+        - cardiologist
+        - dermatologist
+        - neurologist
+        - oncologist
+        - orthopedist
+        - psychiatrist
+        - radiologist
+        - urologist
+        - other
+      example: diagnostician
+    DoctorRegistration:
+      allOf:
+        - $ref: "#/components/schemas/PatientRegistration"
+        - type: object
+          properties:
+            role:
+              $ref: "#/components/schemas/UserRole"
+            specialization:
+              $ref: "#/components/schemas/SpecializationEnum"
+          required:
+            - role
+            - specialization
+    Registration:
+      oneOf:
+        - $ref: "#/components/schemas/PatientRegistration"
+        - $ref: "#/components/schemas/DoctorRegistration"
+      discriminator:
+        propertyName: role
+        mapping:
+          patient: "#/components/schemas/PatientRegistration"
+          doctor: "#/components/schemas/DoctorRegistration"
+    Patient:
+      type: object
+      required:
+        - id
+        - firstName
+        - lastName
+        - email
+        - role
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/UserRole"
+    Doctor:
+      allOf:
+        - $ref: "#/components/schemas/Patient"
+        - type: object
+          required:
+            - specialization
+          properties:
+            specialization:
+              $ref: "#/components/schemas/SpecializationEnum"
+    User:
+      oneOf:
+        - $ref: "#/components/schemas/Patient"
+        - $ref: "#/components/schemas/Doctor"
+      discriminator:
+        propertyName: role
+        mapping:
+          patient: "#/components/schemas/Patient"
+          doctor: "#/components/schemas/Doctor"
+  responses:
+    Doctors:
+      description: Successfully retrieved list of doctors.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - doctors
+            properties:
+              doctors:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Doctor"
+  parameters:
+    patientId:
+      name: patientId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the patient.
+      schema:
+        type: string
+        format: uuid
+      example: b2c3d4e5-f6a7-8901-2345-67890abcdef1
+    doctorId:
+      name: doctorId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the doctor.
+      schema:
+        type: string
+        format: uuid
+      example: b2c3d4e5-f6a7-8901-2345-67890abcdef1

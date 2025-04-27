@@ -30,6 +30,16 @@ type Condition struct {
 	End       *time.Time `bson:"end,omitempty" json:"end,omitempty"`
 }
 
+type Prescription struct {
+	Id            uuid.UUID  `bson:"_id"                     json:"id"`
+	PatientId     uuid.UUID  `bson:"patientId"               json:"patientId"`
+	AppointmentId *uuid.UUID `bson:"appointmentId,omitempty" json:"appointmentId,omitempty"`
+	Name          string     `bson:"name"                    json:"name"`
+	Start         time.Time  `bson:"start"                   json:"start"`
+	End           time.Time  `bson:"end"                     json:"end"`
+	DoctorsNote   *string    `bson:"doctorsNote,omitempty"   json:"doctorsNote,omitempty"`
+}
+
 type mongoMedicalDb struct {
 	conditions    *mongo.Collection
 	prescriptions *mongo.Collection
@@ -234,16 +244,6 @@ func (m *mongoMedicalDb) FindConditionsByPatientIdAndDate(
 	}
 
 	return conditions, nil
-}
-
-type Prescription struct {
-	Id            uuid.UUID  `bson:"_id"                     json:"id"`
-	PatientId     uuid.UUID  `bson:"patientId"               json:"patientId"`
-	AppointmentId *uuid.UUID `bson:"appointmentId,omitempty" json:"appointmentId,omitempty"`
-	Name          string     `bson:"name"                    json:"name"`
-	Start         time.Time  `bson:"start"                   json:"start"`
-	End           time.Time  `bson:"end"                     json:"end"`
-	DoctorsNote   *string    `bson:"doctorsNote,omitempty"   json:"doctorsNote,omitempty"`
 }
 
 func (m *mongoMedicalDb) CreatePrescription(
