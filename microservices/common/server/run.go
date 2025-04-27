@@ -117,6 +117,7 @@ func NewServer[DB Disconnecter](
 	r.Use(Heartbeat())
 	r.Use(OptionsMiddleware)
 
+	spec.Servers = nil
 	validationOpts := OapiValidationOptions{
 		Spec:         spec,
 		ErrorHandler: validationErrorHandler,
@@ -169,7 +170,7 @@ func validationErrorHandler(w http.ResponseWriter, message string, statusCode in
 	if message == "no matching operation was found" {
 		validationErr := &ApiError{
 			ErrorDetail: api.ErrorDetail{
-				Code:   NotFoundCode,
+				Code:   fmt.Sprintf(NotFoundCode, "route"),
 				Title:  "Route not found",
 				Detail: "Route not found",
 				Status: http.StatusNotFound,

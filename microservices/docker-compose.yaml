@@ -11,14 +11,8 @@ services:
       - medical_network
     restart: unless-stopped
     depends_on:
-      - auth-service
-      - patient-service
-      - doctor-service
-      - appointment-service
-      - condition-service
-      - prescription-service
+      - user-service
       - resource-service
-      - medical-history-service
 
   mongo_db:
     image: mongo:7.0-rc
@@ -51,53 +45,13 @@ services:
     networks:
       - medical_network
 
-  patient-service:
+  user-service:
     build:
       context: .
-      dockerfile: ./patient-service/Dockerfile
-    container_name: patient-service
+      dockerfile: ./user-service/Dockerfile
+    container_name: user-service
     env_file:
-      - ./patient-service/local.env
-    networks:
-      - medical_network
-    restart: unless-stopped
-    depends_on:
-      - mongo_db
-
-  doctor-service:
-    build:
-      context: .
-      dockerfile: ./doctor-service/Dockerfile
-    container_name: doctor-service
-    env_file:
-      - ./doctor-service/local.env
-    networks:
-      - medical_network
-    restart: unless-stopped
-    depends_on:
-      - mongo_db
-
-  auth-service:
-    build:
-      context: .
-      dockerfile: ./auth-service/Dockerfile
-    container_name: auth-service
-    env_file:
-      - ./auth-service/local.env
-    networks:
-      - medical_network
-    restart: unless-stopped
-    depends_on:
-      - doctor-service
-      - patient-service
-
-  appointment-service:
-    build:
-      context: .
-      dockerfile: ./appointment-service/Dockerfile
-    container_name: appointment-service
-    env_file:
-      - ./appointment-service/local.env
+      - ./user-service/local.env
     networks:
       - medical_network
     restart: unless-stopped
@@ -111,43 +65,6 @@ services:
     container_name: resource-service
     env_file:
       - ./resource-service/local.env
-    networks:
-      - medical_network
-    restart: unless-stopped
-    depends_on:
-      - mongo_db
-
-  prescription-service:
-    build:
-      context: .
-      dockerfile: ./prescription-service/Dockerfile
-    container_name: prescription-service
-    env_file:
-      - ./prescription-service/local.env
-    networks:
-      - medical_network
-    restart: unless-stopped
-    depends_on:
-      - mongo_db
-
-  medical-history-service:
-    build:
-      context: .
-      dockerfile: ./medical-history-service/Dockerfile
-    container_name: medical-history-service
-    env_file:
-      - ./medical-history-service/local.env
-    networks:
-      - medical_network
-    restart: unless-stopped
-
-  condition-service:
-    build:
-      context: .
-      dockerfile: ./condition-service/Dockerfile
-    container_name: condition-service
-    env_file:
-      - ./condition-service/local.env
     networks:
       - medical_network
     restart: unless-stopped
