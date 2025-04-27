@@ -115,7 +115,13 @@ func (a appointmentServer) mapDataApptToApiAppt(
 	if len(apptData.Facilities) > 0 {
 		f := make([]api.Facility, len(apptData.Facilities))
 		for i, res := range apptData.Facilities {
-			f[i] = api.Facility{Id: res.Id, Name: res.Name}
+			r, _ := a.resourceApi.GetResourceByIdWithResponse(ctx, res.Id)
+			if r.JSON200 == nil {
+				slog.Error("nil facility resources by ID response", "id", res.Id)
+				continue
+			}
+
+			f[i] = api.Facility{Id: res.Id, Name: r.JSON200.Name}
 		}
 		facilities = &f
 	}
@@ -124,7 +130,12 @@ func (a appointmentServer) mapDataApptToApiAppt(
 	if len(apptData.Equipment) > 0 {
 		e := make([]api.Equipment, len(apptData.Equipment))
 		for i, res := range apptData.Equipment {
-			e[i] = api.Equipment{Id: res.Id, Name: res.Name}
+			r, _ := a.resourceApi.GetResourceByIdWithResponse(ctx, res.Id)
+			if r.JSON200 == nil {
+				slog.Error("nil equipment resources by ID response", "id", res.Id)
+				continue
+			}
+			e[i] = api.Equipment{Id: res.Id, Name: r.JSON200.Name}
 		}
 		equipment = &e
 	}
@@ -133,7 +144,12 @@ func (a appointmentServer) mapDataApptToApiAppt(
 	if len(apptData.Medicines) > 0 {
 		m := make([]api.Medicine, len(apptData.Medicines))
 		for i, res := range apptData.Medicines {
-			m[i] = api.Medicine{Id: res.Id, Name: res.Name}
+			r, _ := a.resourceApi.GetResourceByIdWithResponse(ctx, res.Id)
+			if r.JSON200 == nil {
+				slog.Error("nil medicine resources by ID response", "id", res.Id)
+				continue
+			}
+			m[i] = api.Medicine{Id: res.Id, Name: r.JSON200.Name}
 		}
 		medicine = &m
 	}

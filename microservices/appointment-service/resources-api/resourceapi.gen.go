@@ -83,6 +83,9 @@ type AppointmentId = openapi_types.UUID
 // DateTime defines model for date-time.
 type DateTime = time.Time
 
+// ResourceId defines model for resourceId.
+type ResourceId = openapi_types.UUID
+
 // GetAvailableResourcesParams defines parameters for GetAvailableResources.
 type GetAvailableResourcesParams struct {
 	DateTime DateTime `form:"date-time" json:"date-time"`
@@ -187,6 +190,9 @@ type ClientInterface interface {
 	ReserveAppointmentResourcesWithBody(ctx context.Context, appointmentId AppointmentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	ReserveAppointmentResources(ctx context.Context, appointmentId AppointmentId, body ReserveAppointmentResourcesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetResourceById request
+	GetResourceById(ctx context.Context, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) CreateResourceWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -239,6 +245,18 @@ func (c *Client) ReserveAppointmentResourcesWithBody(ctx context.Context, appoin
 
 func (c *Client) ReserveAppointmentResources(ctx context.Context, appointmentId AppointmentId, body ReserveAppointmentResourcesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewReserveAppointmentResourcesRequest(c.Server, appointmentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetResourceById(ctx context.Context, resourceId ResourceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetResourceByIdRequest(c.Server, resourceId)
 	if err != nil {
 		return nil, err
 	}
@@ -381,6 +399,40 @@ func NewReserveAppointmentResourcesRequestWithBody(server string, appointmentId 
 	return req, nil
 }
 
+// NewGetResourceByIdRequest generates requests for GetResourceById
+func NewGetResourceByIdRequest(server string, resourceId ResourceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "resourceId", runtime.ParamLocationPath, resourceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/resources/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -436,6 +488,9 @@ type ClientWithResponsesInterface interface {
 	ReserveAppointmentResourcesWithBodyWithResponse(ctx context.Context, appointmentId AppointmentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReserveAppointmentResourcesResponse, error)
 
 	ReserveAppointmentResourcesWithResponse(ctx context.Context, appointmentId AppointmentId, body ReserveAppointmentResourcesJSONRequestBody, reqEditors ...RequestEditorFn) (*ReserveAppointmentResourcesResponse, error)
+
+	// GetResourceByIdWithResponse request
+	GetResourceByIdWithResponse(ctx context.Context, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetResourceByIdResponse, error)
 }
 
 type CreateResourceResponse struct {
@@ -507,6 +562,30 @@ func (r ReserveAppointmentResourcesResponse) StatusCode() int {
 	return 0
 }
 
+type GetResourceByIdResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *NewResource
+	ApplicationproblemJSON404 *externalRef0.ErrorDetail
+	ApplicationproblemJSON500 *externalRef0.InternalServerErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetResourceByIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetResourceByIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // CreateResourceWithBodyWithResponse request with arbitrary body returning *CreateResourceResponse
 func (c *ClientWithResponses) CreateResourceWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateResourceResponse, error) {
 	rsp, err := c.CreateResourceWithBody(ctx, contentType, body, reqEditors...)
@@ -548,6 +627,15 @@ func (c *ClientWithResponses) ReserveAppointmentResourcesWithResponse(ctx contex
 		return nil, err
 	}
 	return ParseReserveAppointmentResourcesResponse(rsp)
+}
+
+// GetResourceByIdWithResponse request returning *GetResourceByIdResponse
+func (c *ClientWithResponses) GetResourceByIdWithResponse(ctx context.Context, resourceId ResourceId, reqEditors ...RequestEditorFn) (*GetResourceByIdResponse, error) {
+	rsp, err := c.GetResourceById(ctx, resourceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetResourceByIdResponse(rsp)
 }
 
 // ParseCreateResourceResponse parses an HTTP response from a CreateResourceWithResponse call
@@ -630,6 +718,46 @@ func ParseReserveAppointmentResourcesResponse(rsp *http.Response) (*ReserveAppoi
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.ErrorDetail
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest externalRef0.InternalServerErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetResourceByIdResponse parses an HTTP response from a GetResourceByIdWithResponse call
+func ParseGetResourceByIdResponse(rsp *http.Response) (*GetResourceByIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetResourceByIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest NewResource
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest externalRef0.ErrorDetail
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {

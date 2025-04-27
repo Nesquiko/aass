@@ -591,51 +591,40 @@ func (a appointmentServer) UpdateAppointmentResources(
 	var finalMedicine []Resource
 
 	// Facility
-	if req.FacilityId != nil { // Field is present in the request
-		if !req.FacilityId.IsNull() { // Not null, try to fetch and add
+	if req.FacilityId != nil {
+		if !req.FacilityId.IsNull() {
 			id := req.FacilityId.MustGet()
-			// In a real scenario, you'd fetch resource details here from resource-service
-			// For simplicity, we assume it exists if provided. A real implementation
-			// should call resource-service to get details and handle 404s.
-			// We also assume the type based on the field name.
-			finalFacilities = []Resource{
-				{Id: id, Name: "Fetched Facility Name", Type: ResourceTypeFacility},
-			} // Placeholder name
-		} else { // Explicitly null, remove
+			finalFacilities = []Resource{{Id: id, Type: ResourceTypeFacility}}
+		} else {
 			finalFacilities = []Resource{}
 		}
-	} else { // Field is absent, keep current
+	} else {
 		finalFacilities = currentApptData.Facilities
 	}
 
 	// Equipment
-	if req.EquipmentId != nil { // Field is present
+	if req.EquipmentId != nil {
 		if !req.EquipmentId.IsNull() {
 			id := req.EquipmentId.MustGet()
-			finalEquipment = []Resource{
-				{Id: id, Name: "Fetched Equipment Name", Type: ResourceTypeEquipment},
-			} // Placeholder name
+			finalEquipment = []Resource{{Id: id, Type: ResourceTypeEquipment}}
 		} else {
 			finalEquipment = []Resource{}
 		}
-	} else { // Field is absent, keep current
+	} else {
 		finalEquipment = currentApptData.Equipment
 	}
 
 	// Medicine
-	if req.MedicineId != nil { // Field is present
+	if req.MedicineId != nil {
 		if !req.MedicineId.IsNull() {
 			id := req.MedicineId.MustGet()
-			finalMedicine = []Resource{
-				{Id: id, Name: "Fetched Medicine Name", Type: ResourceTypeMedicine},
-			} // Placeholder name
+			finalMedicine = []Resource{{Id: id, Type: ResourceTypeMedicine}}
 		} else {
 			finalMedicine = []Resource{}
 		}
-	} else { // Field is absent, keep current
+	} else {
 		finalMedicine = currentApptData.Medicines
 	}
-	// --- End Resource Handling Logic ---
 
 	// 3. Update the appointment in the database
 	updatedApptData, err := a.db.UpdateAppointmentResources(
@@ -646,7 +635,6 @@ func (a appointmentServer) UpdateAppointmentResources(
 		finalMedicine,
 	)
 	if err != nil {
-		// ErrNotFound should have been caught earlier, but check again just in case.
 		if errors.Is(err, ErrNotFound) {
 			server.EncodeError(w, server.NotFoundId("Appointment", appointmentId))
 			return
@@ -662,13 +650,11 @@ func (a appointmentServer) UpdateAppointmentResources(
 		return
 	}
 
-	// 4. Map the updated data back to the API response model
 	apiAppt, apiErr := a.mapDataApptToApiAppt(ctx, updatedApptData)
 	if apiErr != nil {
 		server.EncodeError(w, apiErr)
 		return
 	}
 
-	// 5. Encode and send the response
 	server.Encode(w, http.StatusOK, apiAppt)
 }

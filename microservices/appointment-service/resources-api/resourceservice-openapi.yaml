@@ -94,6 +94,32 @@ paths:
         "500":
           $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
 
+  /resources/{resourceId}:
+    get:
+      tags:
+        - Resources
+      summary: Get resource by ID
+      description: Retrieves the details of a specific resource (facility, equipment, or medicine) by its unique identifier.
+      operationId: getResourceById
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+      responses:
+        "200":
+          description: Successfully retrieved resource details.
+          content:
+            application/json:
+              schema:
+                # Using NewResource as it contains id, name, and type which are common
+                $ref: "#/components/schemas/NewResource"
+        "404":
+          description: Not Found - The specified resource ID does not exist.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../../common/server/api/common-openapi.yaml#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
 components:
   schemas:
     Facility:
@@ -209,3 +235,12 @@ components:
       schema:
         type: string
         format: date-time
+    resourceId:
+      name: resourceId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the resource.
+      schema:
+        type: string
+        format: uuid
+      example: fac-001-a2b3-c4d5-e6f7
