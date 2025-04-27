@@ -13,6 +13,7 @@ services:
     depends_on:
       - user-service
       - resource-service
+      - medical-service
 
   mongo_db:
     image: mongo:7.0-rc
@@ -65,6 +66,19 @@ services:
     container_name: resource-service
     env_file:
       - ./resource-service/local.env
+    networks:
+      - medical_network
+    restart: unless-stopped
+    depends_on:
+      - mongo_db
+
+  medical-service:
+    build:
+      context: .
+      dockerfile: ./medical-service/Dockerfile
+    container_name: medical-service
+    env_file:
+      - ./medical-service/local.env
     networks:
       - medical_network
     restart: unless-stopped

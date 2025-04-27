@@ -186,6 +186,20 @@ paths:
           $ref: "#/components/responses/Prescriptions"
         "500":
           $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+  /prescriptions/appointment/{appointmentId}:
+    get:
+      tags:
+        - Medical History
+      summary: Get prescriptions by appointment ID
+      description: Retrieves a list of prescriptions associated with a specific appointment identifier.
+      operationId: getPrescriptionsByAppointmentId
+      parameters:
+        - $ref: "#/components/parameters/appointmentId"
+      responses:
+        "200":
+          $ref: "#/components/responses/Prescriptions"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
 
 components:
   schemas:
@@ -447,6 +461,15 @@ components:
       in: path
       required: true
       description: The unique identifier (UUID) of a prescription.
+      schema:
+        type: string
+        format: uuid
+      example: d4e5f6a7-b8c9-0123-4567-890abcdef123
+    appointmentId:
+      name: appointmentId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the appointment.
       schema:
         type: string
         format: uuid
