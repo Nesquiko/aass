@@ -11,6 +11,7 @@ require (
 	github.com/go-chi/httplog/v2 v2.1.1
 	github.com/google/uuid v1.6.0
 	github.com/oapi-codegen/nethttp-middleware v1.0.2
+	github.com/oapi-codegen/nullable v1.1.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/spf13/viper v1.20.1
 	go.mongodb.org/mongo-driver v1.17.3
