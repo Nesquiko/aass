@@ -555,3 +555,120 @@ func (a appointmentServer) RescheduleAppointment(
 
 	server.Encode(w, http.StatusOK, apiAppt)
 }
+
+// UpdateAppointmentResources implements api.ServerInterface.
+func (a appointmentServer) UpdateAppointmentResources(
+	w http.ResponseWriter,
+	r *http.Request,
+	appointmentId api.AppointmentId,
+) {
+	ctx := r.Context()
+	req, decodeErr := server.Decode[api.AppointmentResourceUpdate](w, r)
+	if decodeErr != nil {
+		server.EncodeError(w, decodeErr)
+		return
+	}
+
+	// 1. Fetch current appointment data
+	currentApptData, err := a.db.AppointmentById(ctx, appointmentId)
+	if errors.Is(err, ErrNotFound) {
+		server.EncodeError(w, server.NotFoundId("Appointment", appointmentId))
+		return
+	} else if err != nil {
+		slog.Error(
+			server.UnexpectedError,
+			"error",
+			err.Error(),
+			"where",
+			"UpdateAppointmentResources get current appt",
+		)
+		server.EncodeError(w, server.InternalServerError())
+		return
+	}
+
+	var finalFacilities []Resource
+	var finalEquipment []Resource
+	var finalMedicine []Resource
+
+	// Facility
+	if req.FacilityId != nil { // Field is present in the request
+		if !req.FacilityId.IsNull() { // Not null, try to fetch and add
+			id := req.FacilityId.MustGet()
+			// In a real scenario, you'd fetch resource details here from resource-service
+			// For simplicity, we assume it exists if provided. A real implementation
+			// should call resource-service to get details and handle 404s.
+			// We also assume the type based on the field name.
+			finalFacilities = []Resource{
+				{Id: id, Name: "Fetched Facility Name", Type: ResourceTypeFacility},
+			} // Placeholder name
+		} else { // Explicitly null, remove
+			finalFacilities = []Resource{}
+		}
+	} else { // Field is absent, keep current
+		finalFacilities = currentApptData.Facilities
+	}
+
+	// Equipment
+	if req.EquipmentId != nil { // Field is present
+		if !req.EquipmentId.IsNull() {
+			id := req.EquipmentId.MustGet()
+			finalEquipment = []Resource{
+				{Id: id, Name: "Fetched Equipment Name", Type: ResourceTypeEquipment},
+			} // Placeholder name
+		} else {
+			finalEquipment = []Resource{}
+		}
+	} else { // Field is absent, keep current
+		finalEquipment = currentApptData.Equipment
+	}
+
+	// Medicine
+	if req.MedicineId != nil { // Field is present
+		if !req.MedicineId.IsNull() {
+			id := req.MedicineId.MustGet()
+			finalMedicine = []Resource{
+				{Id: id, Name: "Fetched Medicine Name", Type: ResourceTypeMedicine},
+			} // Placeholder name
+		} else {
+			finalMedicine = []Resource{}
+		}
+	} else { // Field is absent, keep current
+		finalMedicine = currentApptData.Medicines
+	}
+	// --- End Resource Handling Logic ---
+
+	// 3. Update the appointment in the database
+	updatedApptData, err := a.db.UpdateAppointmentResources(
+		ctx,
+		appointmentId,
+		finalFacilities,
+		finalEquipment,
+		finalMedicine,
+	)
+	if err != nil {
+		// ErrNotFound should have been caught earlier, but check again just in case.
+		if errors.Is(err, ErrNotFound) {
+			server.EncodeError(w, server.NotFoundId("Appointment", appointmentId))
+			return
+		}
+		slog.Error(
+			server.UnexpectedError,
+			"error",
+			err.Error(),
+			"where",
+			"UpdateAppointmentResources db update",
+		)
+		server.EncodeError(w, server.InternalServerError())
+		return
+	}
+
+	// 4. Map the updated data back to the API response model
+	apiAppt, apiErr := a.mapDataApptToApiAppt(ctx, updatedApptData)
+	if apiErr != nil {
+		server.EncodeError(w, apiErr)
+		return
+	}
+
+	// 5. Encode and send the response
+	server.Encode(w, http.StatusOK, apiAppt)
+}

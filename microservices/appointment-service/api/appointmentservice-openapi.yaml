@@ -195,6 +195,32 @@ paths:
         "500":
           $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
 
+  /appointments/{appointmentId}/resources:
+    patch:
+      tags:
+        - Appointments
+      summary: Add or update resources for an appointment
+      description: Allows adding or changing the facility, equipment, and medicine associated with a specific appointment, typically after it has been scheduled. Send only the fields you want to set or change. Sending a null value for a field will remove the association.
+      operationId: updateAppointmentResources
+      parameters:
+        - $ref: "#/components/parameters/appointmentId"
+      requestBody:
+        description: The resource IDs to associate with the appointment. Include only fields to be updated.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentResourceUpdate"
+      responses:
+        "200":
+          description: Resources successfully updated for the appointment. Returns the updated appointment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
 components:
   schemas:
     UserRole:
@@ -556,6 +582,25 @@ components:
       required:
         - time
         - status
+    AppointmentResourceUpdate:
+      type: object
+      description: Specifies resources to add or update for an appointment. Fields are optional; include only those to change. Use null to remove an existing resource association.
+      properties:
+        facilityId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The facility ID to associate, or null to remove association.
+        equipmentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The equipment ID to associate, or null to remove association.
+        medicineId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The medicine ID to associate, or null to remove association.
   responses:
     DoctorTimeslots:
       description: Successfully retrieved the list of time slots.

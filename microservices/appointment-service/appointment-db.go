@@ -552,3 +552,36 @@ func (m *mongoAppointmentDb) appointmentExists(ctx context.Context, id uuid.UUID
 
 	return nil
 }
+
+func (m *mongoAppointmentDb) UpdateAppointmentResources(
+	ctx context.Context,
+	appointmentId uuid.UUID,
+	facilities []Resource,
+	equipment []Resource,
+	medicine []Resource,
+) (Appointment, error) {
+	_, err := m.AppointmentById(ctx, appointmentId)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return Appointment{}, ErrNotFound
+		}
+		return Appointment{}, fmt.Errorf("UpdateAppointmentResources: failed check: %w", err)
+	}
+
+	appointmentsColl := m.appointments
+	filter := bson.M{"_id": appointmentId}
+	update := bson.M{
+		"$set": bson.M{
+			"facilities": facilities,
+			"equipment":  equipment,
+			"medicines":  medicine,
+		},
+	}
+
+	_, err = appointmentsColl.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return Appointment{}, fmt.Errorf("UpdateAppointmentResources: failed update: %w", err)
+	}
+
+	return m.AppointmentById(ctx, appointmentId)
+}
