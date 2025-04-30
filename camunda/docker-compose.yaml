@@ -1,0 +1,38 @@
+x-db-credentials: &db_credentials
+  POSTGRES_USER: &db_user camunda_user
+  POSTGRES_PASSWORD: &db_password camunda_password
+  POSTGRES_DB: &db_name camunda_db
+
+services:
+  camunda-db:
+    image: postgres:17
+    container_name: camunda-db
+    environment:
+      <<: *db_credentials
+    volumes:
+      - camunda-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", *db_user, "-d", *db_name]
+      interval: 2s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  camunda-platform:
+    image: camunda/camunda-bpm-platform:run-latest
+    container_name: camunda-platform-run
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://camunda-db:5432/camunda_db
+      SPRING_DATASOURCE_USERNAME: *db_user
+      SPRING_DATASOURCE_PASSWORD: *db_password
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      CAMUNDA_BPM_HISTORY_LEVEL: full
+    depends_on:
+      camunda-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  camunda-db-data:
