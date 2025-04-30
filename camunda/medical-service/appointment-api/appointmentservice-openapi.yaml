@@ -1,0 +1,680 @@
+openapi: 3.0.4
+info:
+  title: MediCal MicroServices API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - description: Endpoint
+    url: /
+tags:
+  - name: Appointments
+paths:
+  /appointments:
+    post:
+      tags:
+        - Appointments
+      summary: Patient creates an appointment request
+      operationId: requestAppointment
+      requestBody:
+        description: Basic info about the appointment request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewAppointmentRequest"
+      responses:
+        "201":
+          description: Appointment successfully requested.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /appointments/{appointmentId}:
+    get:
+      tags:
+        - Appointments
+      summary: Get appointment details
+      operationId: appointmentById
+      parameters:
+        - $ref: "#/components/parameters/appointmentId"
+      responses:
+        "200":
+          description: Appointment details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+    post:
+      tags:
+        - Appointments
+      description: Doctor either accepts or denies patients appointment request.
+      summary: Decide appointment's status
+      operationId: decideAppointment
+      parameters:
+        - $ref: "#/components/parameters/appointmentId"
+      requestBody:
+        description: Whether doctor accepts or denies patients appointment request.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentDecision"
+      responses:
+        "200":
+          description: Appointment successfully accpted or denied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+    patch:
+      tags:
+        - Appointments
+      description: Reschedules patients appointment, also changes state of the appointment to request.
+      summary: Reschedule an appointment
+      operationId: rescheduleAppointment
+      parameters:
+        - $ref: "#/components/parameters/appointmentId"
+      requestBody:
+        description: Reason for cancelling the appointment.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentReschedule"
+      responses:
+        "200":
+          description: Appointment successfully cancelled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+    delete:
+      tags:
+        - Appointments
+      summary: Cancel an appointment
+      operationId: cancelAppointment
+      parameters:
+        - $ref: "#/components/parameters/appointmentId"
+      requestBody:
+        description: Reason for cancelling the appointment.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentCancellation"
+      responses:
+        "204":
+          description: Appointment successfully cancelled.
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /appointments/patient/{patientId}:
+    get:
+      tags:
+        - Patients
+      summary: Get patient's calendar
+      operationId: patientsCalendar
+      parameters:
+        - $ref: "#/components/parameters/patientId"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        "200":
+          description: Returned patient's calendar for a given time period
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointments"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /appointments/doctor/{doctorId}:
+    get:
+      tags:
+        - Doctors
+      summary: Get doctors's calendar
+      operationId: doctorsCalendar
+      parameters:
+        - $ref: "#/components/parameters/doctorId"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        "200":
+          description: Returned doctor's appointments for a given time period
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointments"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /timeslots/{doctorId}:
+    get:
+      tags:
+        - Doctors
+      summary: Get doctor's timeslots for a specific date
+      description: Retrieves a list of available and unavailable time slots for a given doctor ID and date.
+      operationId: doctorsTimeslots
+      parameters:
+        - $ref: "#/components/parameters/doctorId"
+        - $ref: "#/components/parameters/date"
+      responses:
+        "200":
+          $ref: "#/components/responses/DoctorTimeslots"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /appointments/condition/{conditionId}:
+    get:
+      tags:
+        - Appointments
+      summary: Get appointments by condition ID
+      description: Retrieves a list of appointments associated with a specific condition identifier.
+      operationId: appointmentsByConditionId
+      parameters:
+        - $ref: "#/components/parameters/conditionId"
+      responses:
+        "200":
+          description: Successfully retrieved appointments associated with the condition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointments"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /appointments/{appointmentId}/resources:
+    patch:
+      tags:
+        - Appointments
+      summary: Add or update resources for an appointment
+      description: Allows adding or changing the facility, equipment, and medicine associated with a specific appointment, typically after it has been scheduled. Send only the fields you want to set or change. Sending a null value for a field will remove the association.
+      operationId: updateAppointmentResources
+      parameters:
+        - $ref: "#/components/parameters/appointmentId"
+      requestBody:
+        description: The resource IDs to associate with the appointment. Include only fields to be updated.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentResourceUpdate"
+      responses:
+        "200":
+          description: Resources successfully updated for the appointment. Returns the updated appointment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+components:
+  schemas:
+    UserRole:
+      type: string
+      enum:
+        - patient
+        - doctor
+    SpecializationEnum:
+      type: string
+      description: Medical specialization of a doctor.
+      enum:
+        - surgeon
+        - gastroenterologist
+        - pediatrician
+        - diagnostician
+        - endocrinologist
+        - general_practitioner
+        - cardiologist
+        - dermatologist
+        - neurologist
+        - oncologist
+        - orthopedist
+        - psychiatrist
+        - radiologist
+        - urologist
+        - other
+      example: diagnostician
+    Patient:
+      type: object
+      required:
+        - id
+        - firstName
+        - lastName
+        - email
+        - role
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/UserRole"
+    Doctor:
+      allOf:
+        - $ref: "#/components/schemas/Patient"
+        - type: object
+          required:
+            - specialization
+          properties:
+            specialization:
+              $ref: "#/components/schemas/SpecializationEnum"
+    AppointmentType:
+      type: string
+      description: The type of the appointment.
+      enum:
+        - regular_check
+        - new_patient
+        - follow_up
+        - annual_physical
+        - consultation
+        - vaccination
+        - urgent_care
+        - procedure
+        - specialist_visit
+    NewAppointmentRequest:
+      type: object
+      required:
+        - patientId
+        - doctorId
+        - appointmentDateTime
+      properties:
+        patientId:
+          type: string
+          format: uuid
+        doctorId:
+          type: string
+          format: uuid
+        appointmentDateTime:
+          type: string
+          format: date-time
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+        conditionId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          description: Reason for the appointment provided by the patient.
+          example: Feeling unwell, general check-up needed.
+    ConditionDisplay:
+      type: object
+      description: Basic info about a patient's condition.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        appointmentsIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+        - id
+        - name
+        - start
+    AppointmentStatus:
+      type: string
+      description: The current status of the appointment.
+      enum:
+        - requested
+        - cancelled
+        - scheduled
+        - completed
+        - denied
+      example: scheduled
+    PrescriptionDisplay:
+      type: object
+      description: Basic info about a patient's condition.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        appointmentId:
+          type: string
+          format: uuid
+      required:
+        - id
+        - name
+        - start
+        - end
+    Facility:
+      type: object
+      description: Represents a required facility resource.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the facility.
+          example: fac-001-a2b3-c4d5-e6f7
+        name:
+          type: string
+          description: Name of the facility.
+          example: MRI Suite B
+      required:
+        - id
+        - name
+    Equipment:
+      type: object
+      description: Represents a required equipment resource.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the equipment.
+          example: eqp-002-f7e6-d5c4-b3a2
+        name:
+          type: string
+          description: Name of the equipment.
+          example: Ultrasound Machine XG-5
+      required:
+        - id
+        - name
+    Medicine:
+      type: object
+      description: Represents a required medicine resource.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the medicine.
+          example: med-003-9a8b-7c6d-5e4f
+        name:
+          type: string
+          description: Name of the medicine.
+          example: Anaesthetic XYZ
+      required:
+        - id
+        - name
+    Appointment:
+      type: object
+      description: Contains information about an appointment.
+      required:
+        - id
+        - appointmentDateTime
+        - type
+        - status
+        - patient
+        - doctor
+      properties:
+        id:
+          type: string
+          format: uuid
+        appointmentDateTime:
+          type: string
+          format: date-time
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+        condition:
+          $ref: "#/components/schemas/ConditionDisplay"
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        reason:
+          type: string
+        cancellationReason:
+          type: string
+        canceledBy:
+          $ref: "#/components/schemas/UserRole"
+        denialReason:
+          type: string
+        prescriptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrescriptionDisplay"
+        patient:
+          $ref: "#/components/schemas/Patient"
+        doctor:
+          $ref: "#/components/schemas/Doctor"
+        facilities:
+          type: array
+          description: List of required facilities for the appointment.
+          items:
+            $ref: "#/components/schemas/Facility"
+        equipment:
+          type: array
+          description: List of required equipment for the appointment.
+          items:
+            $ref: "#/components/schemas/Equipment"
+        medicine:
+          type: array
+          description: List of required medicine for the appointment.
+          items:
+            $ref: "#/components/schemas/Medicine"
+    AppointmentDecision:
+      type: object
+      description: Data required for staff to accept or reject an appointment request.
+      properties:
+        action:
+          type: string
+          description: The decision action to take on the appointment request.
+          enum:
+            - accept
+            - reject
+          example: accept
+        reason:
+          type: string
+          description: Required reason if the action is 'reject'. Optional otherwise.
+          example: Doctor schedule conflict. Please choose another time.
+        facility:
+          type: string
+          format: uuid
+        equipment:
+          type: string
+          format: uuid
+        medicine:
+          type: string
+          format: uuid
+      required:
+        - action
+    AppointmentCancellation:
+      type: object
+      description: Data required to cancel an appointment.
+      required:
+        - by
+      properties:
+        by:
+          $ref: "#/components/schemas/UserRole"
+        reason:
+          type: string
+          description: Optional reason provided for the cancellation.
+          example: Feeling better, no longer need the consultation.
+    AppointmentReschedule:
+      type: object
+      description: Data required for a patient to reschedule their appointment.
+      properties:
+        newAppointmentDateTime:
+          type: string
+          format: date-time
+        reason:
+          type: string
+          description: Optional reason for rescheduling provided by the patient.
+          example: Work conflict arose.
+      required:
+        - newAppointmentDateTime
+    AppointmentDisplay:
+      type: object
+      description: Represents an appointment view.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the appointment.
+          example: d4e5f6a7-b8c9-0123-4567-890abcdef123
+        appointmentDateTime:
+          type: string
+          format: date-time
+          description: The date time of the appointment.
+        doctorName:
+          type: string
+        patientName:
+          type: string
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+      required:
+        - id
+        - appointmentDateTime
+        - doctorName
+        - patientName
+        - status
+        - type
+    Appointments:
+      type: object
+      properties:
+        appointments:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppointmentDisplay"
+    TimeSlot:
+      type: object
+      description: Represents a single time slot for a doctor on a specific day.
+      properties:
+        time:
+          type: string
+          description: The time of the slot (HH:MM format, 24-hour clock).
+          pattern: ^([01]\d|2[0-3]):([0-5]\d)$
+          example: "09:30"
+        status:
+          type: string
+          description: Indicates whether the time slot is available or not.
+          enum:
+            - available
+            - unavailable
+          example: available
+      required:
+        - time
+        - status
+    AppointmentResourceUpdate:
+      type: object
+      description: Specifies resources to add or update for an appointment. Fields are optional; include only those to change. Use null to remove an existing resource association.
+      properties:
+        facilityId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The facility ID to associate, or null to remove association.
+        equipmentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The equipment ID to associate, or null to remove association.
+        medicineId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The medicine ID to associate, or null to remove association.
+  responses:
+    DoctorTimeslots:
+      description: Successfully retrieved the list of time slots.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - slots
+            properties:
+              slots:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimeSlot"
+  parameters:
+    conditionId:
+      name: conditionId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the condition.
+      schema:
+        type: string
+        format: uuid
+      example: c0d1t10n-1d23-4567-89ab-cdef01234567
+    patientId:
+      name: patientId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the patient.
+      schema:
+        type: string
+        format: uuid
+      example: b2c3d4e5-f6a7-8901-2345-67890abcdef1
+    doctorId:
+      name: doctorId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the doctor.
+      schema:
+        type: string
+        format: uuid
+      example: b2c3d4e5-f6a7-8901-2345-67890abcdef1
+    appointmentId:
+      name: appointmentId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the appointment.
+      schema:
+        type: string
+        format: uuid
+      example: d4e5f6a7-b8c9-0123-4567-890abcdef123
+    from:
+      name: from
+      in: query
+      required: true
+      description: The specific day form which to retrieve resources.
+      schema:
+        type: string
+        format: date
+      example: "2024-07-15"
+    to:
+      name: to
+      in: query
+      description: The specific day to which to retrieve resources.
+      schema:
+        type: string
+        format: date
+      example: "2024-07-15"
+    date:
+      name: date
+      in: query
+      required: true
+      description: The specific day for which to retrieve timeslots (YYYY-MM-DD format).
+      schema:
+        type: string
+        format: date
+      example: "2024-07-15"

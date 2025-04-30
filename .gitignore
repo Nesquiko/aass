@@ -9,3 +9,4 @@ microservices/api-gateway-logs
 microservices/**/*.gen.go
 microservices/medical-service/appointment-api/appointmentapi.gen.go
 microservices/medical-service/appointment-api/appointmentapi.gen.go
+camunda/api-gateway-logs

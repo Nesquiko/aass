@@ -1,0 +1,246 @@
+openapi: 3.0.4
+info:
+  title: MediCal MicroServices API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - description: Endpoint
+    url: /
+tags:
+  - name: Resources
+paths:
+  /resources:
+    post:
+      tags:
+        - Resources
+      summary: Create resource
+      operationId: createResource
+      requestBody:
+        description: New resource to be created
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewResource"
+      responses:
+        "201":
+          description: Created resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewResource"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /resources/available:
+    get:
+      tags:
+        - Resources
+      summary: Get available resources for a time slot
+      operationId: getAvailableResources
+      parameters:
+        - $ref: "#/components/parameters/date-time"
+      responses:
+        "200":
+          description: Successfully retrieved available resources for the specified time slot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailableResources"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /resources/reserve/{appointmentId}:
+    post:
+      tags:
+        - Resources
+      summary: Reserves resources for an appointment
+      operationId: reserveAppointmentResources
+      parameters:
+        - $ref: "#/components/parameters/appointmentId"
+      requestBody:
+        description: Reservation details
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - start
+              properties:
+                start:
+                  type: string
+                  format: date-time
+                facilityId:
+                  type: string
+                  format: uuid
+                medicineId:
+                  type: string
+                  format: uuid
+                equipmentId:
+                  type: string
+                  format: uuid
+      responses:
+        "204":
+          description: Successfully reserved a resource for an appointment.
+        "404":
+          description: Some resource, or appointment wasn't found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../../common/server/api/common-openapi.yaml#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /resources/{resourceId}:
+    get:
+      tags:
+        - Resources
+      summary: Get resource by ID
+      description: Retrieves the details of a specific resource (facility, equipment, or medicine) by its unique identifier.
+      operationId: getResourceById
+      parameters:
+        - $ref: "#/components/parameters/resourceId"
+      responses:
+        "200":
+          description: Successfully retrieved resource details.
+          content:
+            application/json:
+              schema:
+                # Using NewResource as it contains id, name, and type which are common
+                $ref: "#/components/schemas/NewResource"
+        "404":
+          description: Not Found - The specified resource ID does not exist.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../../common/server/api/common-openapi.yaml#/components/schemas/ErrorDetail"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+components:
+  schemas:
+    Facility:
+      type: object
+      description: Represents a required facility resource.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the facility.
+          example: fac-001-a2b3-c4d5-e6f7
+        name:
+          type: string
+          description: Name of the facility.
+          example: MRI Suite B
+      required:
+        - id
+        - name
+    Equipment:
+      type: object
+      description: Represents a required equipment resource.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the equipment.
+          example: eqp-002-f7e6-d5c4-b3a2
+        name:
+          type: string
+          description: Name of the equipment.
+          example: Ultrasound Machine XG-5
+      required:
+        - id
+        - name
+    Medicine:
+      type: object
+      description: Represents a required medicine resource.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the medicine.
+          example: med-003-9a8b-7c6d-5e4f
+        name:
+          type: string
+          description: Name of the medicine.
+          example: Anaesthetic XYZ
+      required:
+        - id
+        - name
+    ResourceType:
+      type: string
+      enum:
+        - medicine
+        - facility
+        - equipment
+    NewResource:
+      type: object
+      description: Represents a resource.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          description: Name of the medicine.
+          example: Anaesthetic XYZ
+        type:
+          $ref: "#/components/schemas/ResourceType"
+      required:
+        - id
+        - name
+        - type
+    AvailableResources:
+      type: object
+      description: Lists of available resources (facilities, equipment, medicine) for a specific date and time slot.
+      properties:
+        facilities:
+          type: array
+          description: List of available facilities.
+          items:
+            $ref: "#/components/schemas/Facility"
+        equipment:
+          type: array
+          description: List of available equipment.
+          items:
+            $ref: "#/components/schemas/Equipment"
+        medicine:
+          type: array
+          description: List of available medicine (assuming medicine can be 'allocated' or has limited stock per slot).
+          items:
+            $ref: "#/components/schemas/Medicine"
+      required:
+        - facilities
+        - equipment
+        - medicine
+
+  parameters:
+    appointmentId:
+      name: appointmentId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the appointment.
+      schema:
+        type: string
+        format: uuid
+      example: d4e5f6a7-b8c9-0123-4567-890abcdef123
+    date-time:
+      name: date-time
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date-time
+    resourceId:
+      name: resourceId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the resource.
+      schema:
+        type: string
+        format: uuid
+      example: fac-001-a2b3-c4d5-e6f7
