@@ -37,6 +37,30 @@ services:
     restart: unless-stopped
     networks:
       - medical_network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://localhost:8080/engine-rest/version || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  camunda-worker:
+    build:
+      context: .
+      dockerfile: ./camunda-worker/Dockerfile
+    container_name: camunda-worker
+    networks:
+      - medical_network
+    restart: unless-stopped
+    depends_on:
+      camunda-platform:
+        condition: service_healthy
+      appointment-service:
+        condition: service_started
 
   api-gateway:
     image: nginx:stable-alpine

@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	"github.com/Nesquiko/aass/appointment-service/api"
-	resourceapi "github.com/Nesquiko/aass/appointment-service/resources-api"
 	"github.com/Nesquiko/aass/common/server"
 )
 
