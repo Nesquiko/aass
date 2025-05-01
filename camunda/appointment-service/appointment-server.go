@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	camunda_client_go "github.com/citilinkru/camunda-client-go/v3"
 	"github.com/go-chi/httplog/v2"
 
 	"github.com/Nesquiko/aass/appointment-service/api"
@@ -22,6 +23,8 @@ type appointmentServer struct {
 	medicalApi  *medicalapi.ClientWithResponses
 	resourceApi *resourceapi.ClientWithResponses
 	userApi     *userapi.ClientWithResponses
+
+	camunda *camunda_client_go.Client
 }
 
 func newAppointmentServer(
@@ -32,11 +35,20 @@ func newAppointmentServer(
 	medicalClient, _ := medicalapi.NewClientWithResponses("http://medical-service:8080/")
 	resourceClient, _ := resourceapi.NewClientWithResponses("http://resource-service:8080/")
 	userClient, _ := userapi.NewClientWithResponses("http://user-service:8080/")
+
+	client := camunda_client_go.NewClient(camunda_client_go.ClientOptions{
+		EndpointUrl: "http://camunda-platform:8080/engine-rest",
+		ApiUser:     "demo",
+		ApiPassword: "demo",
+		Timeout:     time.Second * 10,
+	})
+
 	srv := appointmentServer{
 		db:          db,
 		medicalApi:  medicalClient,
 		resourceApi: resourceClient,
 		userApi:     userClient,
+		camunda:     client,
 	}
 
 	middlewares := make([]api.MiddlewareFunc, len(opts.Middlewares))
@@ -498,6 +510,55 @@ func (a appointmentServer) RequestAppointment(w http.ResponseWriter, r *http.Req
 	apiAppt, apiErr := a.mapDataApptToApiAppt(ctx, createdApptData)
 	if apiErr != nil {
 		server.EncodeError(w, apiErr)
+		return
+	}
+
+	processDefinitionKey := "Process_HandleAppointmentRequest"
+	businessKey := createdApptData.Id.String()
+	variables := map[string]camunda_client_go.Variable{}
+	variables["appointmentId"] = camunda_client_go.Variable{
+		Value: createdApptData.Id.String(),
+		Type:  "String",
+	}
+	variables["patientId"] = camunda_client_go.Variable{
+		Value: createdApptData.PatientId.String(),
+		Type:  "String",
+	}
+	variables["doctorId"] = camunda_client_go.Variable{
+		Value: createdApptData.DoctorId.String(),
+		Type:  "String",
+	}
+	variables["appointmentDateTime"] = camunda_client_go.Variable{
+		Value: createdApptData.AppointmentDateTime.Format(time.RFC3339),
+		Type:  "String",
+	}
+	if createdApptData.Reason != nil {
+		variables["reason"] = camunda_client_go.Variable{
+			Value: *createdApptData.Reason,
+			Type:  "String",
+		}
+	}
+	if createdApptData.ConditionId != nil {
+		variables["conditionId"] = camunda_client_go.Variable{
+			Value: createdApptData.ConditionId.String(),
+			Type:  "String",
+		}
+	}
+
+	_, err = a.camunda.ProcessDefinition.StartInstance(
+		camunda_client_go.QueryProcessDefinitionBy{Key: &processDefinitionKey},
+		camunda_client_go.ReqStartInstance{
+			BusinessKey: &businessKey,
+			Variables:   &variables,
+		},
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to start Camunda process instance",
+			"processDefinitionKey", processDefinitionKey,
+			"businessKey", businessKey,
+			"error", err,
+		)
+		server.EncodeError(w, server.InternalServerError())
 		return
 	}
 
