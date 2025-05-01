@@ -103,7 +103,13 @@ func newMongoResourceDb(ctx context.Context, uri string, db string) (mongoResour
 		}
 	}
 
-	return mongoResourcesDb{resources: resourcesColl, reservations: reservationsColl}, nil
+	resourceDB := mongoResourcesDb{resources: resourcesColl, reservations: reservationsColl}
+	err = resourceDB.seedResources(ctx)
+	if err != nil {
+		slog.Error("Failed to seed resources", "error", err)
+	}
+
+	return resourceDB, nil
 }
 
 func (db mongoResourcesDb) Disconnect(ctx context.Context) error {
@@ -426,4 +432,79 @@ func (m *mongoResourcesDb) resourceExists(ctx context.Context, id uuid.UUID) err
 	}
 
 	return nil
+}
+
+func (m *mongoResourcesDb) seedResources(ctx context.Context) error {
+	initialResources := []Resource{
+		{
+			Id:   uuid.MustParse("399ae499-ac47-468a-9c76-0a58c028141a"),
+			Name: "Operating Room 1",
+			Type: ResourceTypeFacility,
+		},
+		{
+			Id:   uuid.MustParse("76673eca-82e1-46dd-b54a-d80fc02c3eaf"),
+			Name: "Consultation Room A",
+			Type: ResourceTypeFacility,
+		},
+		{
+			Id:   uuid.MustParse("660ee5f2-3ec2-4b71-a7b9-4cd2cc9c9a48"),
+			Name: "MRI Machine",
+			Type: ResourceTypeEquipment,
+		},
+		{
+			Id:   uuid.MustParse("32aeb6b4-100a-459e-bece-15a0d24af9ae"),
+			Name: "X-ray Machine",
+			Type: ResourceTypeEquipment,
+		},
+		{
+			Id:   uuid.MustParse("6241705f-f56d-4ce9-aed4-03d3295a4159"),
+			Name: "Painkillers",
+			Type: ResourceTypeMedicine,
+		},
+		{
+			Id:   uuid.MustParse("24430efc-8308-4f1e-8cab-15f6d43216a5"),
+			Name: "Antibiotics",
+			Type: ResourceTypeMedicine,
+		},
+	}
+
+	resourcesColl := m.resources
+
+	for _, resource := range initialResources {
+		filter := bson.M{"_id": resource.Id}
+		count, err := resourcesColl.CountDocuments(ctx, filter)
+		if err != nil {
+			// This is a critical error talking to the DB, return it
+			return fmt.Errorf("seedResources count check for %s failed: %w", resource.Id, err)
+		}
+
+		if count == 0 {
+			// Resource doesn't exist, insert it
+			_, err := resourcesColl.InsertOne(ctx, resource)
+			if err != nil {
+				// This is an insert error, potentially critical
+				return fmt.Errorf(
+					"seedResources failed to insert resource %s: %w",
+					resource.Id,
+					err,
+				)
+			}
+			slog.InfoContext(
+				ctx,
+				"Seeded resource",
+				"id",
+				resource.Id,
+				"name",
+				resource.Name,
+				"type",
+				resource.Type,
+			)
+		} else {
+			// Resource already exists, log a warning and skip
+			slog.WarnContext(ctx, "Resource already exists, skipping seed", "id", resource.Id, "name", resource.Name)
+		}
+	}
+
+	slog.InfoContext(ctx, "Finished seeding initial resources")
+	return nil // No critical errors during seeding
 }
