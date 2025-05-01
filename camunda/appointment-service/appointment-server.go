@@ -187,7 +187,6 @@ func (a appointmentServer) DecideAppointment(
 	}
 
 	var updatedApptData Appointment
-	var resourcesToUpdate []Resource
 
 	variables := map[string]camunda_client_go.Variable{}
 	variables["doctorDecision"] = camunda_client_go.Variable{
@@ -237,29 +236,27 @@ func (a appointmentServer) DecideAppointment(
 			return
 		}
 
-		availableResources, availErr := a.fetchAvailableResources(ctx, apptData.AppointmentDateTime)
-		if availErr != nil {
-			server.EncodeError(w, availErr)
-			return
-		}
-		resourcesToUpdate = a.getSelectedResources(req, availableResources)
+		resources := make([]Resource, 0)
 		if req.Facility != nil {
 			variables["facilityId"] = camunda_client_go.Variable{
 				Value: req.Facility.String(),
 				Type:  "String",
 			}
+			resources = append(resources, Resource{Id: *req.Facility, Type: ResourceTypeFacility})
 		}
 		if req.Equipment != nil {
 			variables["equipmentId"] = camunda_client_go.Variable{
 				Value: req.Equipment.String(),
 				Type:  "String",
 			}
+			resources = append(resources, Resource{Id: *req.Equipment, Type: ResourceTypeMedicine})
 		}
 		if req.Medicine != nil {
 			variables["medicineId"] = camunda_client_go.Variable{
 				Value: req.Medicine.String(),
 				Type:  "String",
 			}
+			resources = append(resources, Resource{Id: *req.Medicine, Type: ResourceTypeMedicine})
 		}
 
 		updatedApptData, err = a.db.DecideAppointment(
@@ -267,7 +264,7 @@ func (a appointmentServer) DecideAppointment(
 			appointmentId,
 			string(req.Action),
 			nil,
-			resourcesToUpdate,
+			resources,
 		)
 	} else if req.Action == api.Reject {
 		if req.Reason == nil || *req.Reason == "" {

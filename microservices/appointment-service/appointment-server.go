@@ -175,7 +175,6 @@ func (a appointmentServer) DecideAppointment(
 	}
 
 	var updatedApptData Appointment
-	var resourcesToUpdate []Resource
 
 	if req.Action == api.Accept {
 		reserveReqBody := resourceapi.ReserveAppointmentResourcesJSONRequestBody{
@@ -219,19 +218,23 @@ func (a appointmentServer) DecideAppointment(
 			return
 		}
 
-		availableResources, availErr := a.fetchAvailableResources(ctx, apptData.AppointmentDateTime)
-		if availErr != nil {
-			server.EncodeError(w, availErr)
-			return
+		resources := make([]Resource, 0)
+		if req.Facility != nil {
+			resources = append(resources, Resource{Id: *req.Facility, Type: ResourceTypeFacility})
 		}
-		resourcesToUpdate = a.getSelectedResources(req, availableResources)
+		if req.Equipment != nil {
+			resources = append(resources, Resource{Id: *req.Equipment, Type: ResourceTypeMedicine})
+		}
+		if req.Medicine != nil {
+			resources = append(resources, Resource{Id: *req.Medicine, Type: ResourceTypeMedicine})
+		}
 
 		updatedApptData, err = a.db.DecideAppointment(
 			ctx,
 			appointmentId,
 			string(req.Action),
 			nil,
-			resourcesToUpdate,
+			resources,
 		)
 	} else if req.Action == api.Reject {
 		if req.Reason == nil || *req.Reason == "" {
