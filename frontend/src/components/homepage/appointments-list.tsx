@@ -1,6 +1,12 @@
 import { AppointmentDisplay, User } from '../../api/generated';
 import { Navigate } from '../../utils/types';
-import { formatAppointmentType, formatTime, getDateAndTimeTitle, TODAY } from '../../utils/utils';
+import {
+  compareDates,
+  formatAppointmentType,
+  formatTime,
+  getDateAndTimeTitle,
+  TODAY,
+} from '../../utils/utils';
 import { Component, h, Prop } from '@stencil/core';
 
 @Component({
@@ -71,7 +77,7 @@ export class AppointmentsList {
               title="Schedule an appointment"
               class="m-1 w-20"
               onClick={this.handleScheduleAppointmentFromDate}
-              disabled={this.selectedDate < TODAY}
+              disabled={!compareDates(this.selectedDate, new Date())}
             >
               <md-icon class="text-gray-600">calendar_month</md-icon>
               <md-icon class="text-gray-600">add</md-icon>

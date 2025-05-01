@@ -228,6 +228,8 @@ export namespace Components {
         "currentViewYear": number;
         "selectDate": (day: number) => void;
         "selectedDate": Date;
+        "setCurrentViewMonth": (currentViewMonth: number) => void;
+        "setCurrentViewYear": (currentViewYear: number) => void;
     }
     interface XcastvenXkilianProjectDrawer {
         "activeTab": number;
@@ -778,6 +780,8 @@ declare namespace LocalJSX {
         "currentViewYear"?: number;
         "selectDate"?: (day: number) => void;
         "selectedDate"?: Date;
+        "setCurrentViewMonth"?: (currentViewMonth: number) => void;
+        "setCurrentViewYear"?: (currentViewYear: number) => void;
     }
     interface XcastvenXkilianProjectDrawer {
         "activeTab"?: number;

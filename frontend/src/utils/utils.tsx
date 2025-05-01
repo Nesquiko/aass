@@ -277,3 +277,11 @@ export const renderDateSelects = (
     </div>
   );
 };
+
+export const compareDates = (date1: Date, date2: Date): boolean => {
+  if (!date1 || !date2) return false;
+
+  const normalizedDate1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
+  const normalizedDate2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
+  return normalizedDate1 >= normalizedDate2;
+};

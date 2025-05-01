@@ -9,7 +9,9 @@ export class DatePicker {
   @Prop() selectedDate: Date;
   @Prop() selectDate: (day: number) => void;
   @Prop() currentViewMonth: number;
+  @Prop() setCurrentViewMonth: (currentViewMonth: number) => void;
   @Prop() currentViewYear: number;
+  @Prop() setCurrentViewYear: (currentViewYear: number) => void;
 
   private getDaysInMonth = (year: number, month: number) => {
     return new Date(year, month + 1, 0).getDate();
@@ -26,24 +28,24 @@ export class DatePicker {
 
   private prevMonth = () => {
     if (this.currentViewMonth === 0) {
-      this.currentViewMonth = 11;
-      this.currentViewYear--;
+      this.setCurrentViewMonth(11);
+      this.setCurrentViewYear(this.currentViewYear - 1);
     } else {
-      this.currentViewMonth--;
+      this.setCurrentViewMonth(this.currentViewMonth - 1);
     }
   };
 
   private nextMonth = () => {
     if (this.currentViewMonth === 11) {
-      this.currentViewMonth = 0;
-      this.currentViewYear++;
+      this.setCurrentViewMonth(0);
+      this.setCurrentViewYear(this.currentViewYear + 1);
     } else {
-      this.currentViewMonth++;
+      this.setCurrentViewMonth(this.currentViewMonth + 1);
     }
   };
 
   private handleYearChange = (event: Event) => {
-    this.currentViewYear = parseInt((event.target as HTMLSelectElement).value);
+    this.setCurrentViewYear(parseInt((event.target as HTMLSelectElement).value));
   };
 
   private renderCalendar = () => {

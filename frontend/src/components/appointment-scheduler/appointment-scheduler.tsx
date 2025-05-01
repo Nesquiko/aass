@@ -45,6 +45,8 @@ export class AppointmentScheduler {
   async componentWillLoad() {
     if (this.initialDate) {
       this.selectedDate = this.initialDate;
+      this.currentViewMonth = this.initialDate.getMonth();
+      this.currentViewYear = this.initialDate.getFullYear();
     }
 
     try {
@@ -67,7 +69,7 @@ export class AppointmentScheduler {
     }
   }
 
-  private async loadAciveConditions(date: Date, patientId: string) {
+  private async loadActiveConditions(date: Date, patientId: string) {
     try {
       const conds = await this.api.conditions.conditionsInDateRange({
         from: date,
@@ -86,9 +88,10 @@ export class AppointmentScheduler {
   }
 
   private selectDate = (day: number) => {
+    console.log(day, this.currentViewYear, this.currentViewMonth);
     this.selectedDate = new Date(this.currentViewYear, this.currentViewMonth, day);
 
-    this.loadAciveConditions(this.selectedDate, this.user.id);
+    this.loadActiveConditions(this.selectedDate, this.user.id);
     if (this.selectedDoctor) {
       this.loadAvailableTimes(this.selectedDoctor, this.selectedDate);
     }
@@ -145,14 +148,6 @@ export class AppointmentScheduler {
     }
   };
 
-  /*private resetSelection = () => {
-    this.selectedDate = null;
-    this.selectedTime = null;
-    this.selectedAppointmentType = null;
-    this.selectedDoctor = null;
-    this.appointmentReason = '';
-  };*/
-
   private showDetailsPanel = () => {
     return this.selectedDate !== null && this.selectedDoctor !== null;
   };
@@ -179,7 +174,9 @@ export class AppointmentScheduler {
               selectedDate={this.selectedDate}
               selectDate={this.selectDate}
               currentViewMonth={this.currentViewMonth}
+              setCurrentViewMonth={(newMonth: number) => (this.currentViewMonth = newMonth)}
               currentViewYear={this.currentViewYear}
+              setCurrentViewYear={(newYear: number) => (this.currentViewYear = newYear)}
             />
 
             <div class="w-full max-w-md px-4">
