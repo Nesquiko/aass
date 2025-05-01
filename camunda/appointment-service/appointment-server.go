@@ -189,6 +189,12 @@ func (a appointmentServer) DecideAppointment(
 	var updatedApptData Appointment
 	var resourcesToUpdate []Resource
 
+	variables := map[string]camunda_client_go.Variable{}
+	variables["doctorDecision"] = camunda_client_go.Variable{
+		Value: string(req.Action),
+		Type:  "String",
+	}
+
 	if req.Action == api.Accept {
 		reserveReqBody := resourceapi.ReserveAppointmentResourcesJSONRequestBody{
 			Start:       apptData.AppointmentDateTime,
@@ -237,6 +243,24 @@ func (a appointmentServer) DecideAppointment(
 			return
 		}
 		resourcesToUpdate = a.getSelectedResources(req, availableResources)
+		if req.Facility != nil {
+			variables["facilityId"] = camunda_client_go.Variable{
+				Value: req.Facility.String(),
+				Type:  "String",
+			}
+		}
+		if req.Equipment != nil {
+			variables["equipmentId"] = camunda_client_go.Variable{
+				Value: req.Equipment.String(),
+				Type:  "String",
+			}
+		}
+		if req.Medicine != nil {
+			variables["medicineId"] = camunda_client_go.Variable{
+				Value: req.Medicine.String(),
+				Type:  "String",
+			}
+		}
 
 		updatedApptData, err = a.db.DecideAppointment(
 			ctx,
@@ -257,6 +281,12 @@ func (a appointmentServer) DecideAppointment(
 			})
 			return
 		}
+
+		variables["rejectionReason"] = camunda_client_go.Variable{
+			Value: *req.Reason,
+			Type:  "String",
+		}
+
 		updatedApptData, err = a.db.DecideAppointment(
 			ctx,
 			appointmentId,
@@ -284,6 +314,52 @@ func (a appointmentServer) DecideAppointment(
 			"where",
 			"DecideAppointment update db",
 		)
+		server.EncodeError(w, server.InternalServerError())
+		return
+	}
+
+	reviewTaskDefinitionKey := "Activity_ReviewAppointment"
+	businessKeyStr := appointmentId.String()
+
+	query := camunda_client_go.UserTaskGetListQuery{
+		ProcessInstanceBusinessKey: businessKeyStr,
+		TaskDefinitionKey:          reviewTaskDefinitionKey,
+		Active:                     true,
+	}
+
+	tasks, err := a.camunda.UserTask.GetList(&query)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to query Camunda tasks",
+			"businessKey", businessKeyStr,
+			"taskDefinitionKey", reviewTaskDefinitionKey,
+			"error", err,
+		)
+		server.EncodeError(w, server.InternalServerError())
+		return
+	}
+
+	if len(tasks) != 1 {
+		slog.ErrorContext(ctx, "Expected exactly one active Camunda task for appointment, found %d",
+			"taskCount", len(tasks),
+			"businessKey", businessKeyStr,
+			"taskDefinitionKey", reviewTaskDefinitionKey,
+		)
+		server.EncodeError(w, server.InternalServerError())
+		return
+	}
+
+	taskToComplete := tasks[0]
+	err = taskToComplete.Complete(camunda_client_go.QueryUserTaskComplete{
+		Variables: variables,
+	})
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to complete Camunda task",
+			"taskId", taskToComplete.Id,
+			"businessKey", businessKeyStr,
+			"error", err,
+		)
+
+		// Log and alert. Return 500.
 		server.EncodeError(w, server.InternalServerError())
 		return
 	}

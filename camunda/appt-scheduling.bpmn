@@ -23,7 +23,7 @@
       <bpmn:outgoing>Flow_To_AcceptedEnd</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:sequenceFlow id="Flow_Accepted" name="Accepted" sourceRef="Gateway_DoctorDecision" targetRef="Activity_ReserveResources">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${doctorDecision == 'accepted'}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${doctorDecision == 'accept'}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:endEvent id="EndEvent_ResourcesReserved" name="Appointment scheduled">
       <bpmn:incoming>Flow_To_AcceptedEnd</bpmn:incoming>
@@ -33,7 +33,7 @@
       <bpmn:incoming>Flow_Denied</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_Denied" name="Denied" sourceRef="Gateway_DoctorDecision" targetRef="EndEvent_AppointmentDenied">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${doctorDecision == 'denied'}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${doctorDecision == 'reject'}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
@@ -82,7 +82,7 @@
         <di:waypoint x="485" y="120" />
         <di:waypoint x="550" y="120" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="499" y="102" width="47" height="14" />
+          <dc:Bounds x="500" y="102" width="46" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_To_AcceptedEnd_di" bpmnElement="Flow_To_AcceptedEnd">
@@ -94,7 +94,7 @@
         <di:waypoint x="460" y="220" />
         <di:waypoint x="552" y="220" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="476" y="180" width="34" height="14" />
+          <dc:Bounds x="476" y="180" width="35" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
