@@ -1,0 +1,476 @@
+openapi: 3.0.4
+info:
+  title: MediCal MicroServices API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - description: Endpoint
+    url: /
+tags:
+  - name: Conditions
+  - name: Medical History
+paths:
+  /conditions:
+    post:
+      tags:
+        - Conditions
+      summary: Create a condition record for a patient
+      operationId: createPatientCondition
+      requestBody:
+        description: Details of the condition to be created.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewCondition"
+      responses:
+        "201":
+          description: Condition record created successfully. Returns the created condition details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConditionDisplay"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /conditions/{conditionId}:
+    get:
+      tags:
+        - Conditions
+      summary: Condition detail
+      operationId: conditionDetail
+      parameters:
+        - $ref: "#/components/parameters/conditionId"
+      responses:
+        "200":
+          description: Condition details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Condition"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+    patch:
+      tags:
+        - Conditions
+      summary: Update a condition
+      operationId: updateCondition
+      parameters:
+        - $ref: "#/components/parameters/conditionId"
+      requestBody:
+        description: Updated condition fields
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCondition"
+      responses:
+        "200":
+          description: Condition details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Condition"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /conditions/patient/{patientId}:
+    get:
+      tags:
+        - Conditions
+      summary: Conditions in date range
+      operationId: conditionsInDateRange
+      parameters:
+        - $ref: "#/components/parameters/patientId"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        "200":
+          $ref: "#/components/responses/Conditions"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /prescriptions:
+    post:
+      tags:
+        - Medical History
+      summary: Create a prescriptions record for a patient
+      operationId: createPrescription
+      requestBody:
+        description: Details of the prescription to be created.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewPrescription"
+      responses:
+        "201":
+          description: Prescription record created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prescription"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /prescriptions/{prescriptionId}:
+    get:
+      tags:
+        - Medical History
+      summary: Prescription detail
+      operationId: prescriptionDetail
+      parameters:
+        - $ref: "#/components/parameters/prescriptionId"
+      responses:
+        "200":
+          description: Prescription details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prescription"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+    patch:
+      tags:
+        - Medical History
+      summary: Update prescription
+      operationId: updatePrescription
+      parameters:
+        - $ref: "#/components/parameters/prescriptionId"
+      requestBody:
+        description: Updated fields of a prescription
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePrescription"
+      responses:
+        "200":
+          description: Prescription details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prescription"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+    delete:
+      tags:
+        - Medical History
+      summary: Delete prescription
+      operationId: deletePrescription
+      parameters:
+        - $ref: "#/components/parameters/prescriptionId"
+      responses:
+        "204":
+          description: Deleted
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+  /prescriptions/patient/{patientId}:
+    get:
+      tags:
+        - Medical History
+      summary: Prescriptions in date range
+      operationId: prescriptionsInDateRange
+      parameters:
+        - $ref: "#/components/parameters/patientId"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        "200":
+          $ref: "#/components/responses/Prescriptions"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+  /prescriptions/appointment/{appointmentId}:
+    get:
+      tags:
+        - Medical History
+      summary: Get prescriptions by appointment ID
+      description: Retrieves a list of prescriptions associated with a specific appointment identifier.
+      operationId: getPrescriptionsByAppointmentId
+      parameters:
+        - $ref: "#/components/parameters/appointmentId"
+      responses:
+        "200":
+          $ref: "#/components/responses/Prescriptions"
+        "500":
+          $ref: "../../common/server/api/common-openapi.yaml#/components/responses/InternalServerErrorResponse"
+
+components:
+  schemas:
+    ConditionDisplay:
+      type: object
+      description: Basic info about a patient's condition.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        appointmentsIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+        - id
+        - name
+        - start
+    PrescriptionDisplay:
+      type: object
+      description: Basic info about a patient's condition.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        appointmentId:
+          type: string
+          format: uuid
+      required:
+        - id
+        - name
+        - start
+        - end
+    AppointmentType:
+      type: string
+      description: The type of the appointment.
+      enum:
+        - regular_check
+        - new_patient
+        - follow_up
+        - annual_physical
+        - consultation
+        - vaccination
+        - urgent_care
+        - procedure
+        - specialist_visit
+    AppointmentStatus:
+      type: string
+      description: The current status of the appointment.
+      enum:
+        - requested
+        - cancelled
+        - scheduled
+        - completed
+        - denied
+      example: scheduled
+    AppointmentDisplay:
+      type: object
+      description: Represents an appointment view.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the appointment.
+          example: d4e5f6a7-b8c9-0123-4567-890abcdef123
+        appointmentDateTime:
+          type: string
+          format: date-time
+          description: The date time of the appointment.
+        doctorName:
+          type: string
+        patientName:
+          type: string
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+      required:
+        - id
+        - appointmentDateTime
+        - doctorName
+        - patientName
+        - status
+        - type
+    NewCondition:
+      allOf:
+        - $ref: "#/components/schemas/ConditionDisplay"
+        - type: object
+          properties:
+            patientId:
+              type: string
+              format: uuid
+          required:
+            - patientId
+    Condition:
+      allOf:
+        - $ref: "#/components/schemas/ConditionDisplay"
+        - type: object
+          properties:
+            appointments:
+              type: array
+              items:
+                $ref: "#/components/schemas/AppointmentDisplay"
+          required:
+            - appointments
+    UpdateCondition:
+      type: object
+      required:
+        - end
+      properties:
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+          nullable: true
+        patientId:
+          type: string
+          format: uuid
+    NewPrescription:
+      type: object
+      properties:
+        patientId:
+          type: string
+          format: uuid
+        doctorsNote:
+          type: string
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        appointmentId:
+          type: string
+          format: uuid
+      required:
+        - name
+        - start
+        - end
+        - patientId
+    Prescription:
+      allOf:
+        - $ref: "#/components/schemas/PrescriptionDisplay"
+        - type: object
+          properties:
+            doctorsNote:
+              type: string
+            appointment:
+              $ref: "#/components/schemas/AppointmentDisplay"
+    UpdatePrescription:
+      type: object
+      properties:
+        name:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        appointmentId:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        doctorsNote:
+          type: string
+  responses:
+    Conditions:
+      description: Successfully retrieved list of conditions.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - conditions
+            properties:
+              conditions:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConditionDisplay"
+    Prescriptions:
+      description: Successfully retrieved list of prescriptions.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - prescriptions
+            properties:
+              prescriptions:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PrescriptionDisplay"
+  parameters:
+    patientId:
+      name: patientId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the patient.
+      schema:
+        type: string
+        format: uuid
+      example: b2c3d4e5-f6a7-8901-2345-67890abcdef1
+    from:
+      name: from
+      in: query
+      required: true
+      description: The specific day form which to retrieve resources.
+      schema:
+        type: string
+        format: date
+      example: "2024-07-15"
+    to:
+      name: to
+      in: query
+      description: The specific day to which to retrieve resources.
+      schema:
+        type: string
+        format: date
+      example: "2024-07-15"
+    conditionId:
+      name: conditionId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of a condition.
+      schema:
+        type: string
+        format: uuid
+      example: d4e5f6a7-b8c9-0123-4567-890abcdef123
+    prescriptionId:
+      name: prescriptionId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of a prescription.
+      schema:
+        type: string
+        format: uuid
+      example: d4e5f6a7-b8c9-0123-4567-890abcdef123
+    appointmentId:
+      name: appointmentId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the appointment.
+      schema:
+        type: string
+        format: uuid
+      example: d4e5f6a7-b8c9-0123-4567-890abcdef123

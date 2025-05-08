@@ -1,0 +1,41 @@
+openapi: 3.0.4
+info:
+  title: Common API schemas
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+components:
+  schemas:
+    ErrorDetail:
+      type: object
+      description: Standardized error details (RFC 9457).
+      properties:
+        title:
+          type: string
+        code:
+          type: string
+        status:
+          type: integer
+          format: int
+        detail:
+          type: string
+      additionalProperties: true
+      required:
+        - title
+        - code
+        - status
+        - detail
+
+  responses:
+    InternalServerErrorResponse:
+      description: An error occurred. See specific status code for details.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorDetail"
+          example:
+            title: Internal server error
+            status: 500
+            code: internal.server.error
+            detail: An unknown server error occurred
