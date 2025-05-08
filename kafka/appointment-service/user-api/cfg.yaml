@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/HEAD/configuration-schema.json
+package: userapi
+output: userapi.gen.go
+generate:
+  models: true
+  client: true
+import-mapping:
+  ../../common/server/api/common-openapi.yaml: github.com/Nesquiko/aass/common/server/api
