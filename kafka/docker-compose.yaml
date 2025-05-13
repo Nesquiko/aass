@@ -48,7 +48,7 @@ services:
     ports:
       - 27017:27017
     volumes:
-      - db_data:/data/db
+      - ../db-data/:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: mysecret
@@ -127,6 +127,3 @@ services:
 networks:
   medical_network:
     driver: bridge
-
-volumes:
-  db_data: {}

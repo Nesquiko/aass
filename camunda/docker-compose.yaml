@@ -86,7 +86,7 @@ services:
     ports:
       - 27017:27017
     volumes:
-      - db_data:/data/db
+      - ../db-data/:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: mysecret
@@ -168,4 +168,3 @@ networks:
 
 volumes:
   camunda-db-data: {}
-  db_data: {}

@@ -11,3 +11,4 @@ microservices/medical-service/appointment-api/appointmentapi.gen.go
 microservices/medical-service/appointment-api/appointmentapi.gen.go
 camunda/api-gateway-logs
 kafka/api-gateway-logs
+db-data
